@@ -1,19 +1,21 @@
 # Financial Freedom
 
-Work out how much you need invested to stop depending on a salary, and when you could get there. It runs entirely in your browser, with no build step and no account.
+Track your income and spending, and see how much you need invested to stop depending on a salary. It runs entirely in your browser, with no build step and no account.
 
 ## Use it
 
-Double-click `index.html`. Your numbers stay in that browser, so use **Settings > Save my plan** to keep a copy.
+Double-click `index.html`. Your numbers stay in that browser, so use **Menu > Save my plan** to keep a copy.
 
 ## How it works
 
-- **Overview:** your number, your date, how long your savings last, and the stops along the way.
-- **Plan:** life stages with their own income and spending, where you'll live, and what-if comparisons.
-- **Money:** optional income and expense tracking with categories and rules.
-- **Settings:** currency, assumptions, and saving or loading your data.
+- **Money:** what came in, what went out, and where it went, in any currency and optionally in today's prices.
+- **Freedom:** your number, your date and how long your savings last, each with its formula.
 
-Only exchange rates are fetched from the internet, from two free services that need no key. Your data is never sent anywhere.
+Each transaction keeps its own currency. Totals convert at today's rate, and today's prices apply each currency's own yearly inflation first.
+
+Only exchange rates and inflation are fetched from the internet, from free services that need no key. Your data is never sent anywhere.
+
+The full version with life stages, moving and rules is kept at the git tag `v1-full`.
 
 ## Project layout
 
@@ -25,9 +27,8 @@ js/
   config.js       Constants
   engine.js       Planning maths, with no DOM or app state
   store.js        Saved data and validation
-  rates.js        Exchange rates
+  rates.js        Exchange rates and inflation
   format.js       Display and currency helpers
-  model.js        Turns the plan into the numbers views show
   charts.js       SVG charts
   views/          One file per tab
   tutorial.js     First-run walkthrough

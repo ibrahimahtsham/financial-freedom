@@ -1,9 +1,10 @@
 // Constants shared across the app.
 const APP_ID = 'financial-freedom';
-const FILE_VERSION = 4;
-const KEY = 'financial-freedom-v2';
-const RATE_KEY = `${KEY}-rates`;
+const FILE_VERSION = 5;
+const KEY = 'financial-freedom-v3';
 const TX_KEY = `${KEY}-history`;
+const RATE_KEY = `${KEY}-rates`;
+const INFLATION_KEY = `${KEY}-inflation`;
 const TOUR_KEY = `${KEY}-tour`;
 const TAB_KEY = `${KEY}-tab`;
 const RETURN_SPREAD = 2;
@@ -15,18 +16,25 @@ const LAKH_CURRENCIES = ['PKR', 'INR', 'BDT', 'NPR', 'LKR'];
 const BUILT_IN_RATES = {
   r: { USD: 1, SAR: 3.75, PKR: 276.7, AED: 3.6725, QAR: 3.64, KWD: 0.3103, OMR: 0.3845, BHD: 0.376, GBP: 0.743, EUR: 0.891 },
   at: Date.UTC(2026, 10, 6),
-  src: 'built-in',
+};
+
+// The World Bank reports inflation by country, so each currency maps to one.
+const CURRENCY_COUNTRY = {
+  AED: 'ARE', AUD: 'AUS', BDT: 'BGD', BHD: 'BHR', BRL: 'BRA', CAD: 'CAN', CHF: 'CHE', CNY: 'CHN', DKK: 'DNK', EGP: 'EGY',
+  EUR: 'EMU', GBP: 'GBR', IDR: 'IDN', INR: 'IND', JOD: 'JOR', JPY: 'JPN', KRW: 'KOR', KWD: 'KWT', LKR: 'LKA', MAD: 'MAR',
+  MXN: 'MEX', MYR: 'MYS', NGN: 'NGA', NOK: 'NOR', NPR: 'NPL', NZD: 'NZL', OMR: 'OMN', PHP: 'PHL', PKR: 'PAK', QAR: 'QAT',
+  SAR: 'SAU', SEK: 'SWE', SGD: 'SGP', THB: 'THA', TRY: 'TUR', USD: 'USA', VND: 'VNM', ZAR: 'ZAF',
+};
+
+// Used until live data arrives. Yearly % from the World Bank.
+const BUILT_IN_INFLATION = {
+  PAK: { 2022: 19.87, 2023: 30.77, 2024: 12.63, 2025: 3.55 },
+  SAU: { 2022: 2.54, 2023: 2.47, 2024: 1.5, 2025: 2.04 },
 };
 
 // The last entry of each list is the plain fallback for anything uncertain.
-const DEFAULT_CATS = {
+const CATEGORIES = {
   expense: ['Food', 'Rent', 'Transport', 'Bills', 'Phone', 'Shopping', 'Health', 'Learning', 'Entertainment', 'Software', 'Family', 'Cash', 'Bank fees', 'Expense'],
   income: ['Job', 'Job or family', 'Family', 'Investments', 'Bank profit', 'Income'],
   transfer: ['Family', 'Own accounts', 'Refund or reversal', 'Transfer'],
-};
-
-const PERCENT_FIELDS = {
-  ret: { label: 'Yearly return after inflation', min: 0, max: 10, step: 0.5, hint: '5% is a reasonable middle guess.' },
-  wr: { label: 'Yearly withdrawal from the pot', min: 2.5, max: 6, step: 0.25, hint: '' },
-  infl: { label: 'Yearly price rise for old spending', min: 0, max: 20, step: 0.5, hint: "Brings old spending up to today's prices. This is a guess, so set your own." },
 };

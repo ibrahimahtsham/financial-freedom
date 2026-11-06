@@ -1,7 +1,6 @@
-// Starts the app and ties the tabs together.
-const TABS = ['overview', 'plan', 'money', 'settings'];
-let activeTab = 'overview';
-let model = null;
+// Starts the app, and handles tabs, the top bar and saving files.
+const TABS = ['money', 'freedom'];
+let activeTab = 'money';
 
 function currencyOptions() {
   const names = new Intl.DisplayNames(['en'], { type: 'currency' });
@@ -12,7 +11,7 @@ function currencyOptions() {
   const top = POPULAR_CURRENCIES.filter(knownCurrency);
   const rest = Object.keys(rates.r).sort().filter(c => !POPULAR_CURRENCIES.includes(c));
   const html = `<optgroup label="Common">${top.map(option).join('')}</optgroup>${rest.length ? `<optgroup label="All">${rest.map(option).join('')}</optgroup>` : ''}`;
-  ['ccy', 'dest', 'wCcy', 'txCcy'].forEach(id => {
+  ['ccy', 'wCcy', 'txCcy'].forEach(id => {
     const select = $(id);
     const value = select.value;
     select.innerHTML = html;
@@ -20,47 +19,27 @@ function currencyOptions() {
   });
 }
 
-// Pushes saved values into every control.
-function paint() {
-  if (!state.started) return;
-  const u = unit();
-  const focused = document.activeElement;
-  const set = (id, v) => { if (focused !== $(id)) $(id).value = v; };
-  set('cur', fmt(state.cur * u));
-  for (const k of Object.keys(LOCAL_FIELDS)) set(k, fmt(state[k]));
-  set('side', fmt(state.side * planRate()));
-  for (const k in PERCENT_FIELDS) {
-    $(`${k}R`).value = state[k];
-    set(k, String(state[k]));
-  }
-  const pair = planRate() / u;
-  set('fx', pair.toFixed(pair < 1 ? 4 : 2));
-  set('place', state.place);
-  document.querySelectorAll('.uMine').forEach(e => { e.textContent = state.ccy; });
-  document.querySelectorAll('.uPlan').forEach(e => { e.textContent = planCurrency(); });
-  document.querySelector(`input[name=move][value=${state.move ? 'move' : 'stay'}]`).checked = true;
-  document.querySelector(`input[name=home][value=${state.home}]`).checked = true;
-  $('ccy').value = state.ccy;
-  $('dest').value = state.dest;
-  $('fxAuto').checked = state.fxAuto;
-  $('goalYR').value = state.goalY;
-  $('fxLabel').textContent = `${planCurrency()} per 1 ${state.ccy}`;
+function renderRateNote() {
+  const updated = new Date(rates.at).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+  $('retry').hidden = rateState !== 'failed';
+  $('rateNote').textContent = rateState === 'live' ? `Live exchange rates from ${updated}.`
+    : rateState === 'loading' ? 'Getting exchange rates.'
+      : `No connection, so these are the rates from ${updated}.`;
 }
 
-// Saves, recalculates and redraws whatever depends on the plan.
-function refresh() {
+function refreshAll() {
   saveState();
   if (!state.started) return;
-  model = buildModel();
-  renderOverview(model);
-  renderPlan(model);
-  renderSettings(model);
-  $('dockA').textContent = bigMoney(model.goal);
-  $('dockB').textContent = model.hit === null ? 'No date yet' : model.hit === 0 ? 'Done' : dateIn(model.hit);
+  $('ccy').value = state.ccy;
+  $('real').checked = state.real;
+  $('realWrap').hidden = activeTab !== 'money' || !ledger.length;
+  renderRateNote();
+  renderFreedom();
+  renderMoney();
 }
 
 function showTab(name) {
-  activeTab = TABS.includes(name) ? name : 'overview';
+  activeTab = TABS.includes(name) ? name : 'money';
   for (const t of TABS) {
     const on = t === activeTab;
     $(`view-${t}`).hidden = !on;
@@ -70,43 +49,65 @@ function showTab(name) {
   }
   writeStored(TAB_KEY, activeTab);
   if (location.hash !== `#${activeTab}`) history.replaceState(null, '', `#${activeTab}`);
-  if (activeTab === 'overview') drawGrowth(model);
-  if (activeTab === 'money' && ledger.length) renderBars();
+  $('realWrap').hidden = activeTab !== 'money' || !ledger.length;
+  if (state.started) (activeTab === 'money' ? renderMoney : renderFreedom)();
 }
 
 function showApp() {
   $('welcome').hidden = state.started;
   $('app').hidden = !state.started;
-  $('dock').hidden = !state.started;
   if (!state.started) return;
-  paint();
-  renderStages();
-  refresh();
-  renderMoney();
   showTab(activeTab);
+  refreshAll();
 }
 
-function loadRates() {
+function fetchData() {
   refreshRates(() => {
     currencyOptions();
-    renderRateNote();
-    if (state.started && rateState === 'live') {
-      paint();
-      renderStages();
-      refresh();
-      renderMoney();
-    }
+    if (state.started) refreshAll();
+    else renderRateNote();
   });
+  refreshInflation(ledger.map(x => x.c), () => { if (state.started) refreshAll(); });
 }
 
-function resetWelcome() {
-  $('wForm').reset();
-  $('wCcy').value = 'USD';
-  $('wErr').hidden = true;
+function exportPlan() {
+  const blob = new Blob([JSON.stringify(planFile(), null, 1)], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `financial-freedom-plan-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  $('menuNote').textContent = 'Plan saved to your downloads.';
+}
+
+async function importPlan(file) {
+  try {
+    if (file.size > 2e7) throw new Error('too big');
+    const j = JSON.parse(await file.text());
+    if (j.app !== APP_ID || !j.plan || typeof j.plan !== 'object') throw new Error('wrong file');
+    state = { ...cleanState(j.plan), started: true };
+    ledger = cleanLedger(j.history);
+    saveLedger();
+    txShown = 40;
+    catFilter = null;
+    writeStored(TOUR_KEY, true);
+    activeTab = ledger.length ? 'money' : 'freedom';
+    showApp();
+    refreshInflation(ledger.map(x => x.c), refreshAll);
+    $('menuNote').textContent = `Loaded ${file.name}.`;
+  } catch (e) {
+    const message = 'That file is not a Financial Freedom plan.';
+    if (state.started) $('menuNote').textContent = message;
+    else {
+      $('wErr').textContent = message;
+      $('wErr').hidden = false;
+    }
+  }
 }
 
 function initWelcome() {
-  $('wImport').addEventListener('click', () => $('planFile').click());
   $('wForm').addEventListener('submit', e => {
     e.preventDefault();
     const spend = parseNumber($('wSpend').value);
@@ -118,19 +119,21 @@ function initWelcome() {
     }
     $('wErr').hidden = true;
     state.ccy = $('wCcy').value;
-    state.dest = state.ccy;
+    $('txCcy').value = state.ccy;
     const u = unit();
+    const income = Math.max(0, parseNumber($('wIncome').value) || 0);
     state.cur = Math.max(0, parseNumber($('wCur').value) || 0) / u;
-    state.stages = [{ id: uid(), name: 'Now', from: '', income: Math.max(0, parseNumber($('wIncome').value) || 0) / u, spend: spend / u }];
+    state.live = spend / u;
+    state.save = Math.max(0, income - spend) / u;
     state.started = true;
-    activeTab = 'overview';
+    activeTab = 'freedom';
     showApp();
     scrollTo(0, 0);
     if (!readStored(TOUR_KEY, false)) openTour();
   });
 }
 
-function initTabs() {
+function initTopBar() {
   $('tabs').addEventListener('click', e => {
     const tab = e.target.closest('[role=tab]');
     if (tab) showTab(tab.dataset.tab);
@@ -143,30 +146,72 @@ function initTabs() {
     $(`tab-${next}`).focus();
   });
   addEventListener('hashchange', () => showTab(location.hash.slice(1)));
+
+  $('ccy').addEventListener('change', () => {
+    state.ccy = $('ccy').value;
+    $('txCcy').value = state.ccy;
+    refreshAll();
+  });
+  $('real').addEventListener('change', () => {
+    state.real = $('real').checked;
+    refreshAll();
+  });
+  $('retry').addEventListener('click', fetchData);
+  $('exportBtn').addEventListener('click', exportPlan);
+  $('importBtn').addEventListener('click', () => $('planFile').click());
+  $('wImport').addEventListener('click', () => $('planFile').click());
+  $('planFile').addEventListener('change', () => {
+    const file = $('planFile').files[0];
+    $('planFile').value = '';
+    if (file) importPlan(file);
+  });
+
+  let armed = 0;
+  $('reset').addEventListener('click', () => {
+    const button = $('reset');
+    if (!armed) {
+      button.textContent = 'Click again to erase everything';
+      armed = setTimeout(() => { button.textContent = 'Start over'; armed = 0; }, 4000);
+      return;
+    }
+    clearTimeout(armed);
+    armed = 0;
+    button.textContent = 'Start over';
+    state = defaultState();
+    ledger = [];
+    saveState();
+    saveLedger();
+    $('wForm').reset();
+    $('wCcy').value = 'USD';
+    $('wErr').hidden = true;
+    $('menu').open = false;
+    showApp();
+    scrollTo(0, 0);
+  });
 }
 
 function boot() {
-  initPlan();
-  initSettings();
+  initCharts();
   initMoney();
+  initFreedom();
   initTutorial();
   initWelcome();
-  initTabs();
+  initTopBar();
   currencyOptions();
   const start = knownCurrency(state.ccy) ? state.ccy : 'USD';
   $('wCcy').value = start;
   $('txCcy').value = start;
   $('txDate').value = new Date().toISOString().slice(0, 10);
-  if (state.started && !state.stages.length) state.started = false;
-  activeTab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : readStored(TAB_KEY, 'overview');
-  $('chartbox').addEventListener('pointermove', growthHover);
-  $('chartbox').addEventListener('pointerleave', growthLeave);
+  fillAddCategories();
+  const hash = location.hash.slice(1);
+  activeTab = TABS.includes(hash) ? hash : readStored(TAB_KEY, ledger.length ? 'money' : 'freedom');
   new ResizeObserver(() => {
-    if (activeTab === 'overview') drawGrowth(model);
-    if (activeTab === 'money' && ledger.length) renderBars();
+    if (!state.started) return;
+    if (activeTab === 'money' && ledger.length) renderMoney();
+    if (activeTab === 'freedom' && freedomView) drawGrowth(freedomView);
   }).observe($('app'));
   showApp();
-  loadRates();
+  fetchData();
 }
 
 boot();

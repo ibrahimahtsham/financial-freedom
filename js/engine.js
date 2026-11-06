@@ -1,7 +1,8 @@
-// Pure planning maths: no DOM, no app state, so it can be tested on its own.
-// All amounts here are in one currency. Months are "YYYY-MM" strings.
+// Pure maths: no DOM and no app state, so it can be tested on its own.
+// Months are "YYYY-MM" strings.
 const Engine = (() => {
   const MAX_MONTHS = 720;
+  const FREEDOM_MULTIPLE = 25;   // 4% rule: 1 / 0.04
 
   const monthlyRate = yearly => Math.pow(1 + yearly / 100, 1 / 12) - 1;
 
@@ -17,50 +18,42 @@ const Engine = (() => {
     return (by - ay) * 12 + (bm - am);
   }
 
-  // The first stage has no start month. It applies until the next one begins.
-  function stageAt(stages, ym) {
-    let current = stages[0];
-    for (const s of stages.slice(1)) if (s.from && s.from <= ym) current = s;
-    return current;
-  }
-
-  // Runs the plan month by month. Stops at the goal unless keepGoing is set.
-  function simulate({ cur, ret, stages, start, goal = Infinity, months = MAX_MONTHS, incomeAdd = 0, spendCut = 0, keepGoing = false }) {
+  // Each month: pot = pot x (1 + monthly return) + saving.
+  function project({ cur, ret, save, goal = Infinity, months = MAX_MONTHS }) {
     const r = monthlyRate(ret);
-    let pot = cur, own = cur, hit = cur >= goal ? 0 : null, ranOut = null;
-    const series = [{ m: 0, pot, own }];
+    let pot = cur;
+    let hit = cur >= goal ? 0 : null;
+    const series = [pot];
     for (let m = 1; m <= months; m++) {
-      if (hit !== null && !keepGoing) break;
-      const s = stageAt(stages, addMonths(start, m - 1));
-      const flow = s.income + (s.income > 0 ? incomeAdd : 0) - Math.max(0, s.spend - spendCut);
-      pot = pot * (1 + r) + flow;
-      own += flow;
-      if (pot < 0) {
-        pot = 0;
-        own = 0;
-        if (ranOut === null) ranOut = m;
-      }
-      series.push({ m, pot, own });
+      pot = pot * (1 + r) + save;
+      series.push(pot);
       if (hit === null && pot >= goal) hit = m;
     }
-    return { hit, ranOut, series };
+    return { hit, series };
   }
 
-  // How much is needed invested for a yearly withdrawal to cover a monthly cost.
-  const potFor = (monthly, withdrawalRate) => Math.max(0, monthly) * 12 / (withdrawalRate / 100);
+  const freedomNumber = monthly => Math.max(0, monthly) * 12 * FREEDOM_MULTIPLE;
 
   // Whole months savings last at this spending, ignoring growth.
   const runway = (savings, spend) => (spend > 0 ? Math.floor(savings / spend) : Infinity);
 
-  // Extra needed every month, on top of the plan, to reach the goal by month n.
-  function extraToFinish({ cur, ret, stages, start, goal, months }) {
-    const planned = simulate({ cur, ret, stages, start, months, keepGoing: true }).series[months].pot;
-    const r = monthlyRate(ret);
-    const growth = r > 0 ? (Math.pow(1 + r, months) - 1) / r : months;
-    return Math.max(0, (goal - planned) / growth);
+  // How much prices rose from month `from` to month `to`, given yearly inflation
+  // percentages by year. Years with no data use the nearest earlier year.
+  function priceFactor(table, from, to) {
+    const years = Object.keys(table).map(Number).sort((a, b) => a - b);
+    if (!years.length || from >= to) return 1;
+    const rateIn = y => {
+      const known = years.filter(k => k <= y);
+      return table[known.length ? known[known.length - 1] : years[0]];
+    };
+    let factor = 1;
+    for (let ym = from; ym < to; ym = addMonths(ym, 1)) {
+      factor *= Math.pow(1 + rateIn(+ym.slice(0, 4)) / 100, 1 / 12);
+    }
+    return factor;
   }
 
-  return { MAX_MONTHS, monthlyRate, addMonths, monthsBetween, stageAt, simulate, potFor, runway, extraToFinish };
+  return { MAX_MONTHS, FREEDOM_MULTIPLE, monthlyRate, addMonths, monthsBetween, project, freedomNumber, runway, priceFactor };
 })();
 
 if (typeof module !== 'undefined') module.exports = Engine;

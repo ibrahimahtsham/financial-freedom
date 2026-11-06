@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Financial Freedom</title>
-<meta name="description" content="Work out how much you need invested to stop depending on a salary, and when you get there.">
+<meta name="description" content="Track your income and spending, and see how much you need invested to stop depending on a salary.">
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Figtree:wght@400;500;600&display=swap">
@@ -20,10 +20,10 @@
     <p class="lede">Answer four questions to see how much you need invested to stop depending on a salary, and when you could get there.</p>
   </div>
   <form id="wForm" class="card stack" autocomplete="off" novalidate>
-    <div class="wfield"><label for="wCcy">Your currency</label><select id="wCcy"></select></div>
-    <div class="wfield"><label for="wSpend">What you spend in a month</label><input id="wSpend" type="text" inputmode="decimal"></div>
-    <div class="wfield"><label for="wCur">What you have saved so far</label><input id="wCur" type="text" inputmode="decimal"></div>
-    <div class="wfield"><label for="wIncome">What you earn in a month</label><input id="wIncome" type="text" inputmode="decimal"><p class="hint">Between jobs? Put 0, and add your next job later.</p></div>
+    <div class="pick"><label for="wCcy">Your currency</label><select id="wCcy"></select></div>
+    <div class="pick"><label for="wSpend">What you spend in a month</label><input class="textin" id="wSpend" type="text" inputmode="decimal"></div>
+    <div class="pick"><label for="wCur">What you have saved so far</label><input class="textin" id="wCur" type="text" inputmode="decimal"></div>
+    <div class="pick"><label for="wIncome">What you earn in a month</label><input class="textin" id="wIncome" type="text" inputmode="decimal"><p class="hint">Between jobs? Put 0.</p></div>
     <p class="err" id="wErr" role="alert" hidden></p>
     <button type="submit" class="primary">Show my number</button>
   </form>
@@ -31,14 +31,118 @@
 </div>
 
 <div class="page" id="app" hidden>
-  <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
-    <button type="button" role="tab" id="tab-overview" data-tab="overview" aria-controls="view-overview">Overview</button>
-    <button type="button" role="tab" id="tab-plan" data-tab="plan" aria-controls="view-plan">Plan</button>
-    <button type="button" role="tab" id="tab-money" data-tab="money" aria-controls="view-money">Money</button>
-    <button type="button" role="tab" id="tab-settings" data-tab="settings" aria-controls="view-settings">Settings</button>
-  </nav>
+  <div class="topbar" id="topbar">
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
+      <button type="button" role="tab" id="tab-money" data-tab="money" aria-controls="view-money">Money</button>
+      <button type="button" role="tab" id="tab-freedom" data-tab="freedom" aria-controls="view-freedom">Freedom</button>
+    </nav>
+    <div class="controls">
+      <label class="check" id="realWrap"><input type="checkbox" id="real">In today's prices</label>
+      <select id="ccy" aria-label="Show everything in this currency"></select>
+      <details class="menu" id="menu">
+        <summary aria-label="Menu">Menu</summary>
+        <div class="menu-box stack">
+          <button type="button" id="exportBtn">Save my plan</button>
+          <button type="button" id="importBtn">Load a plan</button>
+          <button type="button" id="tourBtn">Show tutorial</button>
+          <button type="button" id="reset">Start over</button>
+          <p class="hint" id="menuNote" role="status">Your numbers stay in this browser. Save a copy so clearing it can't lose them.</p>
+          <p class="hint" id="rateNote" role="status"></p>
+          <button type="button" class="link" id="retry" hidden>Try again</button>
+        </div>
+      </details>
+    </div>
+  </div>
 
-  <section class="view" id="view-overview" role="tabpanel" aria-labelledby="tab-overview">
+  <section class="view" id="view-money" role="tabpanel" aria-labelledby="tab-money">
+    <div class="head-row">
+      <h1 class="page-title">Your money</h1>
+      <div class="row">
+        <select id="period" aria-label="Period"></select>
+        <button type="button" class="primary" id="addOpen">Add</button>
+      </div>
+    </div>
+
+    <form class="card" id="addBox" autocomplete="off" novalidate hidden>
+      <div class="addgrid">
+        <div class="seg wide" role="radiogroup" aria-label="Money in or out">
+          <label><input type="radio" name="txKind" value="expense" checked><span>Money out</span></label>
+          <label><input type="radio" name="txKind" value="income"><span>Money in</span></label>
+        </div>
+        <div class="pick"><label for="txAmount">Amount</label><input class="textin" id="txAmount" type="text" inputmode="decimal"></div>
+        <div class="pick"><label for="txCcy">Currency</label><select id="txCcy"></select></div>
+        <div class="pick"><label for="txCat">Category</label><select id="txCat"></select></div>
+        <div class="pick"><label for="txDate">Date</label><input class="textin" id="txDate" type="date"></div>
+        <div class="pick wide"><label for="txNote">Note</label><input class="textin" id="txNote" type="text" maxlength="120"></div>
+        <div class="wide row"><button type="submit" class="primary">Add it</button><span class="hint" id="txMsg" role="status"></span></div>
+      </div>
+    </form>
+
+    <p class="note" id="moneyEmpty">Add your first income or expense above, and your summary will build from there.</p>
+
+    <div class="stack-lg" id="moneyFull">
+      <div class="pair four">
+        <div class="tile"><h3>In</h3><div class="v" id="mIn"></div><p class="d" id="mInD"></p></div>
+        <div class="tile"><h3>Out</h3><div class="v" id="mOut"></div><p class="d" id="mOutD"></p></div>
+        <div class="tile"><h3>Left over</h3><div class="v" id="mLeft"></div><p class="d" id="mLeftD"></p></div>
+        <div class="tile"><h3>You kept</h3><div class="v" id="mKept"></div><p class="d" id="mKeptD"></p></div>
+      </div>
+      <p class="note" id="viewNote"></p>
+
+      <section>
+        <h2>Month by month</h2>
+        <div class="legend">
+          <span><i class="key fill in"></i>Money in</span>
+          <span><i class="key fill out"></i>Money out</span>
+        </div>
+        <div class="chartbox"><svg id="inOut" class="chart" role="img" aria-label="Bar chart of money in and money out for each month"></svg></div>
+      </section>
+
+      <section class="split">
+        <div>
+          <h2>Where it went</h2>
+          <ul class="cats" id="catOut"></ul>
+        </div>
+        <div>
+          <h2>Where it came from</h2>
+          <ul class="cats" id="catIn"></ul>
+        </div>
+      </section>
+      <p class="note" id="moved"></p>
+
+      <section class="split">
+        <div>
+          <h2>Biggest expenses</h2>
+          <ol class="steps levers" id="topList"></ol>
+        </div>
+        <div>
+          <h2>Balance over time</h2>
+          <div class="chartbox"><svg id="balance" class="chart" role="img" aria-label="Area chart of your balance at the end of each month"></svg></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Spending by day</h2>
+        <div class="chartbox scroll"><svg id="calendar" role="img" aria-label="Calendar showing how much you spent each day"></svg></div>
+        <div class="legend scale"><span>Less</span><i class="day-key l1"></i><i class="day-key l2"></i><i class="day-key l3"></i><i class="day-key l4"></i><span>More</span></div>
+      </section>
+
+      <section id="txSec">
+        <div class="head-row">
+          <h2>Transactions</h2>
+          <span class="hint" id="txCount"></span>
+        </div>
+        <div class="txbar">
+          <input class="textin" id="txSearch" type="search" placeholder="Search" aria-label="Search transactions">
+          <button type="button" id="txClear" hidden></button>
+        </div>
+        <ul class="txlist" id="txList"></ul>
+        <button type="button" id="txMore" class="gap" hidden>Show more</button>
+      </section>
+    </div>
+  </section>
+
+  <section class="view" id="view-freedom" role="tabpanel" aria-labelledby="tab-freedom" hidden>
     <header>
       <div id="hero">
         <h1 id="headline"></h1>
@@ -55,214 +159,34 @@
       <p class="progress" id="progress"></p>
     </header>
 
-    <div class="pair three" id="tiles">
-      <div class="tile" id="tileDate"><h3>Your date</h3><div class="v" id="dateV"></div><p class="d" id="dateD"></p></div>
-      <div class="tile" id="tileRun"><h3 id="runH"></h3><div class="v" id="runV"></div><p class="d" id="runD"></p></div>
-      <div class="tile" id="tileNow"><h3 id="nowH"></h3><div class="v" id="nowV"></div><p class="d" id="nowD"></p></div>
+    <div class="card inputs" id="inputs">
+      <div class="pick"><label for="fCur">Savings so far</label><span class="num"><span class="unit uMine"></span><input type="text" id="fCur" inputmode="decimal"></span></div>
+      <div class="pick"><label for="fSave">Saving each month</label><span class="num"><span class="unit uMine"></span><input type="text" id="fSave" inputmode="decimal"></span><p class="hint" id="saveHint"></p><button type="button" class="link start" id="saveAuto" hidden></button></div>
+      <div class="pick"><label for="fLive">Want to live on each month</label><span class="num"><span class="unit uMine"></span><input type="text" id="fLive" inputmode="decimal"></span><p class="hint" id="liveHint"></p><button type="button" class="link start" id="liveAuto" hidden></button></div>
+      <div class="pick"><label for="fRet">Yearly return after inflation</label><div class="row"><input type="range" id="fRetR" aria-label="Yearly return after inflation" min="0" max="10" step="0.5"><span class="num"><span class="unit">%</span><input class="short" type="text" id="fRet" inputmode="decimal"></span></div><p class="hint">5% is a reasonable middle guess.</p></div>
     </div>
-    <p class="note" id="range"></p>
+
+    <div class="results" id="tiles">
+      <div class="tile" id="tileNum"><h3>Your number</h3><div class="v" id="numV"></div><p class="d" id="numD"></p><details class="how"><summary>How this is worked out</summary><div id="numHow"></div></details></div>
+      <div class="tile" id="tileDate"><h3>Your date</h3><div class="v" id="dateV"></div><p class="d" id="dateD"></p><details class="how"><summary>How this is worked out</summary><div id="dateHow"></div></details></div>
+      <div class="tile" id="tileRun"><h3>Your savings last</h3><div class="v" id="runV"></div><p class="d" id="runD"></p><details class="how"><summary>How this is worked out</summary><div id="runHow"></div></details></div>
+    </div>
 
     <section>
-      <h2>How your pot grows</h2>
+      <h2>Your timeline</h2>
       <div class="legend">
         <span><i class="key"></i><span id="lgMid"></span></span>
         <span><i class="key band"></i><span id="lgBand"></span></span>
         <span><i class="key goal"></i>Goal</span>
       </div>
-      <div class="chartbox" id="chartbox">
-        <svg id="chart" role="img" aria-label="Line chart of your pot growing toward the goal, with a band for lower and higher returns"></svg>
-        <div class="tip" id="tip"></div>
-      </div>
+      <div class="chartbox" id="growthBox"><svg id="chart" class="chart" role="img" aria-label="Line chart of your pot growing toward your number, with a band for lower and higher returns"></svg></div>
     </section>
 
-    <section>
-      <h2>The stops along the way</h2>
-      <ol class="steps" id="steps"></ol>
-    </section>
-  </section>
-
-  <section class="view" id="view-plan" role="tabpanel" aria-labelledby="tab-plan" hidden>
-    <section id="stageSec">
-      <h2>My life stages</h2>
-      <p class="note intro">Each stage runs until the next one starts. Use a stage for each big change, like a new job, a gap between jobs, or moving out. Income can be 0.</p>
-      <div class="card"><div class="costs" id="curField"></div></div>
-      <ol class="stages" id="stages"></ol>
-      <button type="button" id="addStage">Add a stage</button>
-    </section>
-
-    <section>
-      <h2>Where I'll live</h2>
-      <div class="card stack">
-        <div class="seg" role="radiogroup" aria-label="Stay or move">
-          <label><input type="radio" name="move" value="stay"><span>Stay here</span></label>
-          <label><input type="radio" name="move" value="move"><span>Move</span></label>
-        </div>
-        <div class="stack" id="moveFields">
-          <div class="pick"><label for="place">Place</label><input class="textin" id="place" type="text" maxlength="60" placeholder="City or country"></div>
-          <div class="pick"><label for="dest">Currency there</label><select id="dest"></select></div>
-          <div class="seg" role="radiogroup" aria-label="Rent or buy">
-            <label><input type="radio" name="home" value="rent"><span>Rent</span></label>
-            <label><input type="radio" name="home" value="buy"><span>Buy</span></label>
-          </div>
-          <div class="costs" id="rentFields"></div>
-          <div class="costs" id="buyFields"></div>
-          <p class="hint">Leave monthly costs at 0 to use your last stage's spending.</p>
-        </div>
-        <div class="costs" id="sideField"></div>
-        <p class="hint" id="sideH"></p>
-      </div>
-    </section>
-
-    <section>
-      <h2>Finish sooner</h2>
-      <div class="tile">
-        <h3 id="goalH"></h3>
-        <div class="v" id="needV"></div>
-        <p class="d" id="needD"></p>
-        <div class="row"><input type="range" id="goalYR" aria-label="Years you would like it to take" min="1" max="40" step="1"></div>
-      </div>
-    </section>
-
-    <section id="moves">
-      <h2>What moves your date most</h2>
-      <p class="note intro" id="movesNote"></p>
-      <ul class="steps levers" id="levers"></ul>
-    </section>
-
-    <div>
-      <details class="fold sec" open>
-        <summary><h2>Test a job offer</h2></summary>
-        <div class="body">
-          <p class="note intro">See what an income from next month onward would do. Use this puts it into your stages.</p>
-          <div class="pick narrow"><label for="testIncome">Monthly income to test</label><input class="textin" id="testIncome" type="text" inputmode="decimal"></div>
-          <div class="tablewrap"><table id="salaries"></table></div>
-        </div>
-      </details>
-      <details class="fold sec" id="cmpFold">
-        <summary><h2>Compare rent and buy</h2></summary>
-        <div class="body">
-          <div class="pair">
-            <div class="tile" id="cmpRent"><h3>Rent</h3><div class="v" id="cmpRentV"></div><p class="d" id="cmpRentD"></p></div>
-            <div class="tile" id="cmpBuy"><h3>Buy</h3><div class="v" id="cmpBuyV"></div><p class="d" id="cmpBuyD"></p></div>
-          </div>
-          <p class="note" id="cmpNote"></p>
-        </div>
-      </details>
-      <details class="fold sec">
-        <summary><h2>See it year by year</h2></summary>
-        <div class="body"><div class="tablewrap"><table id="yearly"></table></div></div>
-      </details>
-    </div>
-  </section>
-
-  <section class="view" id="view-money" role="tabpanel" aria-labelledby="tab-money" hidden>
-    <section id="ledgerSec">
-      <h2>My money</h2>
-      <p class="note intro" id="ledgerEmpty">Add your income and expenses to see where your money goes. This is optional, and your plan works without it.</p>
-      <div id="ledgerStats" hidden>
-        <div class="pick narrow"><label for="period">Period</label><select id="period"></select></div>
-        <div class="pair spaced">
-          <div class="tile"><h3>Comes in each month</h3><div class="v" id="lgIncome"></div></div>
-          <div class="tile"><h3>Goes out each month</h3><div class="v" id="lgSpend"></div></div>
-        </div>
-        <div class="split">
-          <div><h3>Where it went</h3><ul class="cats" id="catOut"></ul></div>
-          <div><h3>Where it came from</h3><ul class="cats" id="catIn"></ul></div>
-        </div>
-        <p class="note" id="moved"></p>
-        <h3 class="gap">Spending in the last 24 months</h3>
-        <div class="bars"><svg id="bars" role="img" aria-label="Bar chart of spending in each of the last 24 months"></svg></div>
-        <p class="note" id="lgByCcy"></p>
-        <div class="row gap"><button type="button" id="useReal">Use my real spending in my current stage</button></div>
-        <p class="hint" id="lgNote" role="status"></p>
-      </div>
-    </section>
-
-    <div>
-      <details class="fold sec">
-        <summary><h2>Add income or an expense</h2></summary>
-        <form class="body addform" id="txForm" autocomplete="off" novalidate>
-          <div class="pick"><label for="txType">Type</label><select id="txType"><option value="expense">Expense</option><option value="income">Income</option><option value="transfer">Transfer</option></select></div>
-          <div class="pick"><label for="txCat">Category</label><select id="txCat"></select></div>
-          <div class="pick"><label for="txDate">Date</label><input class="textin" id="txDate" type="date"></div>
-          <div class="pick"><label for="txAmount">Amount</label><input class="textin" id="txAmount" type="text" inputmode="decimal"></div>
-          <div class="pick"><label for="txCcy">Currency</label><select id="txCcy"></select></div>
-          <div class="pick"><label for="txNote">Note</label><input class="textin" id="txNote" type="text" maxlength="120"></div>
-          <div class="wide row"><button type="submit" class="primary">Add it</button><span class="hint" id="txMsg" role="status"></span></div>
-        </form>
-      </details>
-      <details class="fold sec" id="txFold">
-        <summary><h2>All transactions</h2><span class="val" id="txCount"></span></summary>
-        <div class="body">
-          <div class="txbar">
-            <input class="textin" id="txSearch" type="search" placeholder="Search" aria-label="Search transactions">
-            <select id="txFilter" aria-label="Filter transactions">
-              <option value="all">Everything</option><option value="income">Income</option><option value="expense">Expenses</option><option value="transfer">Transfers</option><option value="plain">No category yet</option>
-            </select>
-          </div>
-          <div class="tablewrap"><table id="txTable"></table></div>
-          <button type="button" id="txMore" class="gap" hidden>Show more</button>
-        </div>
-      </details>
-      <details class="fold sec">
-        <summary><h2>Categories and rules</h2></summary>
-        <div class="body stack">
-          <p class="note intro">A rule sorts every transaction whose details contain your words, so you don't have to do them one by one.</p>
-          <form class="addform" id="ruleForm" autocomplete="off" novalidate>
-            <div class="pick"><label for="ruleQ">Details contain</label><input class="textin" id="ruleQ" type="text" maxlength="60"></div>
-            <div class="pick"><label for="ruleType">Type</label><select id="ruleType"><option value="expense">Expense</option><option value="income">Income</option><option value="transfer">Transfer</option></select></div>
-            <div class="pick"><label for="ruleCat">Category</label><select id="ruleCat"></select></div>
-            <div class="wide row"><button type="submit">Add rule</button><span class="hint" id="ruleMsg" role="status"></span></div>
-          </form>
-          <ul class="chips" id="ruleList"></ul>
-          <form class="addform" id="catForm" autocomplete="off" novalidate>
-            <div class="pick"><label for="catName">New category</label><input class="textin" id="catName" type="text" maxlength="30"></div>
-            <div class="pick"><label for="catType">For</label><select id="catType"><option value="expense">Expenses</option><option value="income">Income</option><option value="transfer">Transfers</option></select></div>
-            <div class="wide row"><button type="submit">Add category</button></div>
-          </form>
-          <ul class="chips" id="catList"></ul>
-        </div>
-      </details>
-    </div>
-  </section>
-
-  <section class="view" id="view-settings" role="tabpanel" aria-labelledby="tab-settings" hidden>
-    <section>
-      <h2>Currency</h2>
-      <div class="card stack">
-        <div class="pick"><label for="ccy">My currency</label><select id="ccy"></select></div>
-        <div class="stack" id="rateBox">
-          <p class="hint" id="rateNote" role="status"></p>
-          <button type="button" class="link start" id="retry" hidden>Try again</button>
-          <div class="costs" id="fxField"></div>
-          <label class="check"><input type="checkbox" id="fxAuto">Use the live exchange rate</label>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <h2>Assumptions</h2>
-      <div class="card stack" id="pctFields"></div>
-    </section>
-
-    <section id="dataSec">
-      <h2>My data</h2>
-      <div class="card stack">
-        <p class="hint" id="toolNote" role="status">Your numbers stay in this browser. Save a copy so clearing your browser can't lose them.</p>
-        <div class="tools">
-          <button type="button" id="exportBtn">Save my plan</button>
-          <button type="button" id="importBtn">Load a plan</button>
-          <button type="button" id="tourBtn">Show tutorial</button>
-          <button type="button" id="reset">Start over</button>
-        </div>
-      </div>
-    </section>
-
-    <p class="note">All numbers are in today's money, so the return is what you earn above inflation. If you plan to move, think about which currency your pot is held in, because exchange rates shift over time. This is a planning tool, not financial advice.</p>
+    <p class="note">All numbers here are in today's money, so the return is what you earn above inflation. This is a planning tool, not financial advice.</p>
   </section>
 </div>
 
-<div class="dock" id="dock" aria-hidden="true" hidden><span id="dockA"></span><span id="dockB"></span></div>
+<div class="tip" id="hoverTip" hidden></div>
 <input type="file" id="planFile" accept=".json,application/json" hidden>
 
 <div id="tourShade" hidden></div>
@@ -284,12 +208,9 @@
 <script src="js/store.js"></script>
 <script src="js/rates.js"></script>
 <script src="js/format.js"></script>
-<script src="js/model.js"></script>
 <script src="js/charts.js"></script>
-<script src="js/views/overview.js"></script>
-<script src="js/views/plan.js"></script>
 <script src="js/views/money.js"></script>
-<script src="js/views/settings.js"></script>
+<script src="js/views/freedom.js"></script>
 <script src="js/tutorial.js"></script>
 <script src="js/app.js"></script>
 </body>

@@ -1,10 +1,9 @@
-// First-run walkthrough. Each step opens its tab and highlights one area.
+// Short walkthrough. Each step opens its tab and highlights one area.
 const TOUR_STEPS = [
-  { tab: 'overview', el: 'hero', t: 'This is your number', p: 'It is how much you need invested so the returns pay your costs without a salary.' },
-  { tab: 'overview', el: 'tiles', t: 'Your date and your runway', p: 'See when you get there, and how long your savings last if income stops.' },
-  { tab: 'plan', el: 'stageSec', t: 'Plan your life in stages', p: 'Add a stage for each change, like a new job or moving out. No income is fine, so put 0.' },
-  { tab: 'money', el: 'ledgerSec', t: 'Track your money', p: 'Add income and expenses here to see where it all goes. This part is optional.' },
-  { tab: 'settings', el: 'dataSec', t: 'Keep your plan safe', p: 'Your numbers stay in this browser only. Save your plan to a file so you can load it again.' },
+  { tab: 'freedom', el: 'hero', t: 'This is your number', p: 'It is how much you need invested so the returns pay your costs without a salary.' },
+  { tab: 'freedom', el: 'inputs', t: 'Try your own numbers', p: 'Change these to see your date move. Open "How this is worked out" under any result to see the formula.' },
+  { tab: 'money', el: 'addOpen', t: 'Track your money', p: 'Add income and expenses here. Your averages then feed into your freedom date.' },
+  { tab: 'money', el: 'topbar', t: 'See it your way', p: 'Pick the currency to view everything in, and save your plan from the menu, because your numbers stay in this browser.' },
 ];
 let tourAt = -1;
 
@@ -38,6 +37,7 @@ function showStep(i) {
 const tourParts = ['tourShade', 'tourSpot', 'tourCard'];
 
 function openTour() {
+  $('menu').open = false;
   tourParts.forEach(id => { $(id).hidden = false; });
   showStep(0);
 }
@@ -46,8 +46,8 @@ function closeTour() {
   tourAt = -1;
   tourParts.forEach(id => { $(id).hidden = true; });
   writeStored(TOUR_KEY, true);
-  showTab('overview');
-  $('tab-overview').focus({ preventScroll: true });
+  showTab('freedom');
+  $('tab-freedom').focus({ preventScroll: true });
   scrollTo(0, 0);
 }
 
