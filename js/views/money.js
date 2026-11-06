@@ -137,6 +137,26 @@ function balanceRows(keys) {
   return rows;
 }
 
+// Running balance through one month, day by day.
+function balanceDays(month) {
+  const held = {};
+  const days = {};
+  for (const x of ledger) {
+    const sign = x.t === 'income' ? x.a : -x.a;
+    if (x.d.slice(0, 7) < month) held[x.c] = (held[x.c] || 0) + sign;
+    else if (x.d.startsWith(month)) {
+      days[x.d] = days[x.d] || {};
+      days[x.d][x.c] = (days[x.d][x.c] || 0) + sign;
+    }
+  }
+  return dayRows(month).map(({ k }) => {
+    for (const c in days[k] || {}) held[c] = (held[c] || 0) + days[k][c];
+    let usd = 0;
+    for (const c in held) if (knownCurrency(c)) usd += (held[c] / rates.r[c]) * (state.real ? priceFactor(c, month) : 1);
+    return { k, v: usd * unit() };
+  });
+}
+
 function lastDate(ym) {
   const d = new Date(+ym.slice(0, 4), +ym.slice(5), 0);
   return `${ym}-${String(d.getDate()).padStart(2, '0')}`;
@@ -172,6 +192,29 @@ function renderNotice() {
   $('viewNote').textContent = parts.join(' ');
 }
 
+function dayRows(month) {
+  const today = new Date().toISOString().slice(0, 10);
+  const days = {};
+  for (const x of ledger) {
+    if (!x.d.startsWith(month)) continue;
+    days[x.d] = days[x.d] || { in: 0, out: 0 };
+    days[x.d][x.t === 'income' ? 'in' : 'out'] += viewUsd(x) * unit();
+  }
+  const count = +lastDate(month).slice(8);
+  return Array.from({ length: count }, (_, i) => `${month}-${String(i + 1).padStart(2, '0')}`)
+    .filter(k => k <= today)
+    .map(k => ({ k, in: days[k]?.in || 0, out: days[k]?.out || 0 }));
+}
+
+function showDay(d) {
+  txFilter.day = d;
+  txFilter.cat = '';
+  txPage = 0;
+  renderMoney();
+  if (tourAt < 0) $('txSec').scrollIntoView({ block: 'start' });
+  else showToast(`The table now shows ${dayName(d)}.`);
+}
+
 function renderMoney() {
   const has = ledger.length > 0;
   $('moneyEmpty').hidden = has;
@@ -188,13 +231,16 @@ function renderMoney() {
     months[k][x.t === 'income' ? 'in' : 'out'] += viewUsd(x) * unit();
   }
   const rows = keys.map(k => ({ k, in: months[k]?.in || 0, out: months[k]?.out || 0 }));
+  const oneMonth = keys.length === 1;
+  $('inOutTitle').textContent = oneMonth ? 'Day by day' : 'Month by month';
+  $('inOutHint').textContent = oneMonth ? 'Click a day to see it in the table.' : 'Click a month to zoom in on it.';
   renderSummary(keys);
   renderCategories(keys);
   renderTop(keys);
   renderInsights(keys, rows);
   renderNotice();
-  drawInOut(rows);
-  drawBalance(balanceRows(keys));
+  drawInOut(oneMonth ? dayRows(keys[0]) : rows);
+  drawBalance(oneMonth ? balanceDays(keys[0]) : balanceRows(keys));
   renderCalendar(keys);
   renderTable();
 }
@@ -219,17 +265,11 @@ function initMoney() {
   $('catIn').addEventListener('click', pickCategory);
 
   $('inOut').addEventListener('click', e => {
-    const m = e.target.dataset.month;
-    if (m) setRangeMonths(m, m);
+    const { month, day } = e.target.dataset;
+    if (month) zoomInto(month);
+    if (day) showDay(day);
   });
   $('calendar').addEventListener('click', e => {
-    const d = e.target.dataset.day;
-    if (!d) return;
-    txFilter.day = d;
-    txFilter.cat = '';
-    txPage = 0;
-    renderMoney();
-    if (tourAt < 0) $('txSec').scrollIntoView({ block: 'start' });
-    else showToast(`The table now shows ${dayName(d)}.`);
+    if (e.target.dataset.day) showDay(e.target.dataset.day);
   });
 }

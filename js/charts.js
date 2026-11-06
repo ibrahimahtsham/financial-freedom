@@ -22,7 +22,7 @@ function setChart(box, W, H, markup) {
 
 const chartWidth = box => Math.max(280, box.parentElement.clientWidth);
 
-// Income and spending side by side for each month.
+// Income and spending side by side, for each month or each day of one month.
 function drawInOut(rows) {
   const box = $('inOut');
   if (!box.parentElement.clientWidth || !rows.length) return;
@@ -35,11 +35,12 @@ function drawInOut(rows) {
   let o = yGrid(y, top, 4, L, W - R);
   rows.forEach((r, i) => {
     const x = L + i * slot + (slot - bar * 2 - 2) / 2;
-    const tip = `${monthName(r.k)}\nIn: ${state.ccy} ${fmt(r.in)}\nOut: ${state.ccy} ${fmt(r.out)}`;
+    const isDay = r.k.length > 7;
+    const tip = `${isDay ? dayName(r.k) : monthName(r.k)}\nIn: ${state.ccy} ${fmt(r.in)}\nOut: ${state.ccy} ${fmt(r.out)}`;
     if (r.in > 0) o += `<rect fill="var(--in)" x="${x}" y="${y(r.in)}" width="${bar}" height="${H - B - y(r.in)}" rx="2"/>`;
     if (r.out > 0) o += `<rect fill="var(--out)" x="${x + bar + 2}" y="${y(r.out)}" width="${bar}" height="${H - B - y(r.out)}" rx="2"/>`;
-    o += `<rect class="hit" x="${L + i * slot}" y="${T}" width="${slot}" height="${H - T - B}" data-tip="${esc(tip)}" data-month="${r.k}"/>`;
-    if (i % every === 0) o += `<text x="${L + i * slot + 2}" y="${H - 6}">${monthName(r.k)}</text>`;
+    o += `<rect class="hit" x="${L + i * slot}" y="${T}" width="${slot}" height="${H - T - B}" data-tip="${esc(tip)}" data-${isDay ? 'day' : 'month'}="${r.k}"/>`;
+    if (i % every === 0) o += `<text x="${L + i * slot + 2}" y="${H - 6}">${isDay ? +r.k.slice(8) : monthName(r.k)}</text>`;
   });
   setChart(box, W, H, o);
 }
@@ -58,8 +59,9 @@ function drawBalance(rows) {
   o += `<polyline points="${line}" fill="none" stroke="var(--in)" stroke-width="2" stroke-linejoin="round"/>`;
   const slot = (W - L - R) / Math.max(1, rows.length - 1);
   rows.forEach((r, i) => {
-    o += `<rect class="hit" x="${x(i) - slot / 2}" y="${T}" width="${slot}" height="${H - T - B}" data-tip="${esc(`${monthName(r.k)}\n${state.ccy} ${fmt(r.v)}`)}"/>`;
-    if (i % every === 0) o += `<text x="${x(i)}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : 'middle'}">${monthName(r.k)}</text>`;
+    const isDay = r.k.length > 7;
+    o += `<rect class="hit" x="${x(i) - slot / 2}" y="${T}" width="${slot}" height="${H - T - B}" data-tip="${esc(`${isDay ? dayName(r.k) : monthName(r.k)}\n${state.ccy} ${fmt(r.v)}`)}"/>`;
+    if (i % every === 0) o += `<text x="${x(i)}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : 'middle'}">${isDay ? +r.k.slice(8) : monthName(r.k)}</text>`;
   });
   setChart(box, W, H, o);
 }

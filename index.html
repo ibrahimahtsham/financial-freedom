@@ -90,14 +90,15 @@
 
         <section class="panel c7">
           <div class="panel-head">
-            <h2>Month by month</h2>
+            <h2 id="inOutTitle">Month by month</h2>
             <div class="legend">
+              <button type="button" id="zoomOut" hidden></button>
               <span><i class="key fill in"></i>Money in</span>
               <span><i class="key fill out"></i>Money out</span>
             </div>
           </div>
           <div class="chart-wrap"><svg id="inOut" class="chart" role="img" aria-label="Bar chart of money in and money out for each month"></svg></div>
-          <p class="hint">Click a month to zoom in on it.</p>
+          <p class="hint" id="inOutHint"></p>
         </section>
 
         <section class="panel c5">

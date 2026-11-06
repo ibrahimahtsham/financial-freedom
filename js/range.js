@@ -3,6 +3,7 @@ let rangeMonths = [];   // every month from the first transaction to now
 let rangeFrom = 0;      // indexes into rangeMonths
 let rangeTo = 0;
 let renderQueued = false;
+let zoomedFrom = null;  // the range to go back to after zooming into a month
 
 const selectedMonths = () => rangeMonths.slice(rangeFrom, rangeTo + 1);
 
@@ -16,6 +17,7 @@ function queueMoneyRender() {
 }
 
 function setRange(from, to) {
+  zoomedFrom = null;
   const last = rangeMonths.length - 1;
   rangeFrom = Math.max(0, Math.min(from, last));
   rangeTo = Math.max(rangeFrom, Math.min(to, last));
@@ -28,6 +30,18 @@ function setRangeMonths(from, to) {
   const i = rangeMonths.indexOf(from);
   const j = rangeMonths.indexOf(to);
   setRange(i < 0 ? 0 : i, j < 0 ? rangeMonths.length - 1 : j);
+}
+
+function zoomInto(month) {
+  const back = [rangeFrom, rangeTo];
+  setRangeMonths(month, month);
+  zoomedFrom = back;
+  writeStored(RANGE_KEY, { from: rangeMonths[back[0]], to: rangeMonths[back[1]] });   // a reload shouldn't strand you zoomed in
+  syncRange();
+}
+
+function zoomOut() {
+  if (zoomedFrom) setRange(...zoomedFrom);
 }
 
 // Stretches the range so a month is visible, such as one you just added to.
@@ -59,6 +73,8 @@ function presetMatches(p) {
   return rangeMonths[rangeFrom] === p.from && rangeMonths[rangeTo] === p.to;
 }
 
+const rangeText = (from, to) => (from === to ? monthName(from) : `${monthName(from)} to ${monthName(to)}`);
+
 function syncRange() {
   const n = Math.max(1, rangeMonths.length);
   const left = (rangeFrom / n) * 100;
@@ -75,9 +91,11 @@ function syncRange() {
   $('rangeA').setAttribute('aria-valuenow', rangeFrom);
   $('rangeB').setAttribute('aria-valuenow', rangeTo);
   const count = rangeTo - rangeFrom + 1;
-  $('rangeLabel').textContent = from === to ? monthName(from) : `${monthName(from)} to ${monthName(to)}`;
+  $('rangeLabel').textContent = rangeText(from, to);
   $('rangeCount').textContent = count === 1 ? '1 month' : `${count} months`;
   document.querySelectorAll('#rangeBars rect').forEach((r, i) => r.classList.toggle('on', i >= rangeFrom && i <= rangeTo));
+  $('zoomOut').hidden = !zoomedFrom;
+  if (zoomedFrom) $('zoomOut').textContent = `Back to ${rangeText(rangeMonths[zoomedFrom[0]], rangeMonths[zoomedFrom[1]])}`;
   const presets = rangePresets();
   document.querySelectorAll('#rangeChips button').forEach((b, i) => b.classList.toggle('on', presetMatches(presets[i])));
 }
@@ -165,6 +183,7 @@ function initRange() {
     setRange(rangeFrom, Math.max(rangeTo + keys[e.key], rangeFrom));
   });
 
+  $('zoomOut').addEventListener('click', zoomOut);
   $('rangeChips').addEventListener('click', e => {
     const p = rangePresets().find(x => x.id === e.target.dataset.id);
     if (!p) return;
