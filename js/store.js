@@ -13,7 +13,7 @@ const thisMonth = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 
-const defaultState = () => ({ started: false, ccy: 'USD', real: false, cur: null, save: 0, live: null, ret: 5 });
+const defaultState = () => ({ started: false, ccy: 'USD', real: false, cur: null, save: 0, live: null, ret: 5, hiddenCols: [] });
 
 const amount = v => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
 
@@ -27,11 +27,25 @@ function cleanState(raw) {
   s.save = amount(raw.save) ?? 0;
   s.live = amount(raw.live);
   s.ret = Math.min(20, amount(raw.ret) ?? 5);
+  if (Array.isArray(raw.hiddenCols)) s.hiddenCols = raw.hiddenCols.filter(c => typeof c === 'string');
   return s;
 }
 
 const RENAMED_CATEGORIES = { Expense: 'Other', Income: 'Other', Transfer: 'Other', 'Refund or reversal': 'Money back', 'Job or family': 'Other', Refund: 'Money back', 'Own accounts': 'My other banks', Entertainment: 'Fun', Software: 'Apps', Investments: 'Investing' };
 const plainCategory = type => CATEGORIES[type][CATEGORIES[type].length - 1];
+
+// Your own categories live on the items that use them, so they are saved with your
+// money and disappear by themselves once nothing uses them.
+function categoryList(type) {
+  const own = [...new Set(ledger.filter(x => x.t === type && !CATEGORIES[type].includes(x.k)).map(x => x.k))].sort();
+  return [...CATEGORIES[type].slice(0, -1), ...own, plainCategory(type)];
+}
+
+// Typing "food" should reuse Food rather than make a second one.
+function categoryName(type, typed) {
+  const name = typed.trim().replace(/\s+/g, ' ').slice(0, 30);
+  return categoryList(type).find(k => k.toLowerCase() === name.toLowerCase()) ?? name;
+}
 
 function cleanLedger(list) {
   if (!Array.isArray(list)) return [];

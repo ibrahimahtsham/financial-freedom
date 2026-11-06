@@ -156,6 +156,11 @@ dialog h2 { margin-bottom: 14px; }
 .steps.levers .when { text-align: right; white-space: nowrap; }
 
 /* Transactions table */
+#txSec { scroll-margin-top: 150px; }
+.head-acts { display: flex; gap: 8px; align-items: center; }
+#colBox { width: 190px; }
+.col-pick { display: flex; gap: 8px; align-items: center; font-size: 14px; cursor: pointer; }
+#txCatNew { margin-top: 6px; }
 .txbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
 .txbar .textin { flex: 2; min-width: 200px; width: auto; }
 .txbar select { flex: 1; min-width: 140px; width: auto; }

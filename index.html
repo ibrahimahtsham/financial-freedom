@@ -133,7 +133,10 @@
         <section class="panel c12" id="txSec">
           <div class="panel-head">
             <div><h2>Your money list</h2><p class="hint" id="txCount"></p></div>
-            <button type="button" id="txCsv">Download this list</button>
+            <div class="head-acts">
+              <details class="menu" id="colMenu"><summary>Columns</summary><div class="menu-box stack" id="colBox"></div></details>
+              <button type="button" id="txCsv">Download this list</button>
+            </div>
           </div>
           <div class="txbar">
             <input class="textin" id="txSearch" type="search" placeholder="Search" aria-label="Search your money list">
@@ -232,7 +235,7 @@
       </div>
       <div class="pick"><label for="txAmount">Amount</label><input class="textin" id="txAmount" type="text" inputmode="decimal"></div>
       <div class="pick"><label for="txCcy">Type of money</label><select id="txCcy"></select></div>
-      <div class="pick"><label for="txCat">What for</label><select id="txCat"></select></div>
+      <div class="pick"><label for="txCat">What for</label><select id="txCat"></select><input class="textin" id="txCatNew" type="text" maxlength="30" placeholder="Name it" aria-label="Name for your new one" hidden></div>
       <div class="pick"><label for="txDate">Date</label><input class="textin" id="txDate" type="date"></div>
       <div class="pick"><label for="txNote">Note</label><input class="textin" id="txNote" type="text" maxlength="120"></div>
       <div class="pick"><label for="txSource">Bank or wallet</label><input class="textin" id="txSource" type="text" maxlength="20" list="acctList"><datalist id="acctList"></datalist></div>
