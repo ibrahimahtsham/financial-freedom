@@ -14,7 +14,8 @@ function buildFreedom() {
   const hi = state.ret + RETURN_SPREAD;
   const hitLo = Engine.project({ ...input, ret: lo }).hit;
   const hitHi = Engine.project({ ...input, ret: hi }).hit;
-  const span = Math.min(40, Math.max(5, Math.ceil(((hit ?? hitLo ?? 240) / 12) + 1)));
+  // The chart runs as far as the date does, so the line always gets to the goal.
+  const span = Math.min(Engine.MAX_MONTHS / 12, Math.max(5, Math.ceil(((hit ?? hitHi ?? 240) / 12) + 1)));
   const run = ret => Engine.project({ cur, save, ret, months: span * 12 }).series;
   const [mid, low, high] = [run(state.ret), run(lo), run(hi)];
   const points = Array.from({ length: span + 1 }, (_, y) => ({ y, mid: mid[y * 12], lo: low[y * 12], hi: high[y * 12] }));
