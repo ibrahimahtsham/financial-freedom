@@ -30,7 +30,8 @@ js/
   rates.js        Exchange rates and inflation
   format.js       Display and currency helpers
   charts.js       SVG charts
-  views/          One file per tab
+  range.js        Timeline slider
+  views/          Money dashboard, transactions table, Freedom
   tutorial.js     First-run walkthrough
   app.js          Startup and tab switching
 tests/            Tests for the planning maths

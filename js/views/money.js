@@ -1,6 +1,4 @@
-// Money tab: what came in, what went out, and every transaction.
-let txShown = 40;
-let catFilter = null;   // { t, k } when a category has been clicked
+// Money tab: the dashboard. The transactions table lives in table.js.
 
 // Average of the last 6 full months, always in plain amounts. Feeds the Freedom tab.
 function tracked() {
@@ -9,68 +7,108 @@ function tracked() {
   for (const x of ledger) {
     if (!keys.has(x.d.slice(0, 7))) continue;
     if (x.t === 'income') income += usdOf(x);
-    if (x.t === 'expense') spend += usdOf(x);
+    else spend += usdOf(x);
   }
   return { has: income + spend > 0, income: income / 6, spend: spend / 6 };
 }
 
-function periodMonths() {
-  const p = $('period').value;
-  if (p === 'now') return [thisMonth()];
-  if (p === '6' || p === '12') return fullMonths(+p);
-  const used = ledger.map(x => x.d.slice(0, 7)).sort();
-  if (!used.length) return [thisMonth()];
-  const first = p === 'all' ? used[0] : `${p}-01`;
-  const last = p === 'all' ? used[used.length - 1] : `${p}-12`;
-  const end = last > thisMonth() ? thisMonth() : last;
-  return Array.from({ length: Engine.monthsBetween(first, end) + 1 }, (_, i) => Engine.addMonths(first, i));
+function sumMonths(keys) {
+  const set = new Set(keys);
+  let income = 0, spend = 0;
+  for (const x of ledger) {
+    if (!set.has(x.d.slice(0, 7))) continue;
+    if (x.t === 'income') income += viewUsd(x);
+    else spend += viewUsd(x);
+  }
+  return { income, spend };
 }
 
-function periodOptions() {
-  const years = [...new Set(ledger.map(x => x.d.slice(0, 4)))].sort().reverse();
-  const value = $('period').value || '12';
-  $('period').innerHTML = `<option value="now">This month</option><option value="6">Last 6 months</option><option value="12">Last 12 months</option>${years.map(y => `<option value="${y}">${y}</option>`).join('')}<option value="all">All time</option>`;
-  $('period').value = value;
+function changeText(now, before, label) {
+  if (!(before > 0)) return '';
+  const pct = Math.round(((now - before) / before) * 100);
+  if (pct === 0) return `Same as the ${label} before`;
+  return `${Math.abs(pct)}% ${pct > 0 ? 'more' : 'less'} than the ${label} before`;
 }
 
-function renderSummary(rows) {
-  const u = unit();
-  const inUsd = rows.reduce((a, r) => a + r.in, 0) / u;
-  const outUsd = rows.reduce((a, r) => a + r.out, 0) / u;
-  const n = Math.max(1, rows.length);
-  const left = inUsd - outUsd;
-  $('mIn').textContent = money(inUsd);
-  $('mOut').textContent = money(outUsd);
+function renderSummary(keys) {
+  const { income, spend } = sumMonths(keys);
+  const n = Math.max(1, keys.length);
+  const left = income - spend;
+  const prev = Array.from({ length: n }, (_, i) => Engine.addMonths(keys[0], i - n));
+  const before = sumMonths(prev);
+  const label = n === 1 ? 'month' : `${n} months`;
+  $('mIn').textContent = money(income);
+  $('mOut').textContent = money(spend);
   $('mLeft').textContent = `${left < 0 ? '-' : ''}${money(Math.abs(left))}`;
-  $('mInD').textContent = `${money(inUsd / n)} a month`;
-  $('mOutD').textContent = `${money(outUsd / n)} a month`;
-  $('mLeftD').textContent = left < 0 ? 'You spent more than came in.' : 'What you kept.';
-  $('mKept').textContent = inUsd > 0 ? `${Math.round((left / inUsd) * 100)}%` : 'No income';
+  $('mKept').textContent = income > 0 ? `${Math.round((left / income) * 100)}%` : 'No income';
+  $('mInD').textContent = `${money(income / n)} a month`;
+  $('mOutD').textContent = `${money(spend / n)} a month`;
+  $('mLeftD').textContent = left < 0 ? 'You spent more than came in.' : 'Added to your balance.';
   $('mKeptD').textContent = 'Of what came in.';
+  $('mInC').textContent = changeText(income, before.income, label);
+  $('mOutC').textContent = changeText(spend, before.spend, label);
 }
 
 function renderCategories(keys) {
+  const set = new Set(keys);
   const sums = { expense: {}, income: {} };
-  for (const x of ledger) {
-    if (keys.has(x.d.slice(0, 7))) sums[x.t][x.k] = (sums[x.t][x.k] || 0) + viewUsd(x);
-  }
+  for (const x of ledger) if (set.has(x.d.slice(0, 7))) sums[x.t][x.k] = (sums[x.t][x.k] || 0) + viewUsd(x);
   const list = (t, id) => {
-    const rows = Object.entries(sums[t]).sort((a, b) => b[1] - a[1]);
-    const total = rows.reduce((a, [, v]) => a + v, 0);
-    const top = rows.length ? rows[0][1] : 1;
-    $(id).innerHTML = rows.length ? rows.map(([k, v]) => `<li><button type="button" class="cat${catFilter && catFilter.k === k && catFilter.t === t ? ' on' : ''}" data-t="${t}" data-k="${esc(k)}">
+    const all = Object.entries(sums[t]).sort((a, b) => b[1] - a[1]);
+    const total = all.reduce((a, [, v]) => a + v, 0);
+    const top = all.length ? all[0][1] : 1;
+    const shown = all.slice(0, 7);
+    const rest = all.slice(7).reduce((a, [, v]) => a + v, 0);
+    const row = (k, v, click) => `<li><button type="button" class="cat${txFilter.cat === `${t}|${k}` ? ' on' : ''}"${click ? ` data-cat="${t}|${esc(k)}"` : ' disabled'}>
       <span class="cat-name">${esc(k)}</span>
       <span class="cat-track"><i style="width:${Math.max(1, (v / top) * 100)}%"></i></span>
       <span class="cat-val">${money(v)}<small>${Math.round((v / total) * 100)}%</small></span>
-    </button></li>`).join('') : '<li class="hint">Nothing in this period.</li>';
+    </button></li>`;
+    $(id).innerHTML = all.length
+      ? shown.map(([k, v]) => row(k, v, true)).join('') + (rest > 0 ? row(`${all.length - 7} more`, rest, false) : '')
+      : '<li class="hint">Nothing in this period.</li>';
   };
   list('expense', 'catOut');
   list('income', 'catIn');
 }
 
 function renderTop(keys) {
-  const top = ledger.filter(x => x.t === 'expense' && keys.has(x.d.slice(0, 7))).sort((a, b) => viewUsd(b) - viewUsd(a)).slice(0, 5);
+  const set = new Set(keys);
+  const top = ledger.filter(x => x.t === 'expense' && set.has(x.d.slice(0, 7))).sort((a, b) => viewUsd(b) - viewUsd(a)).slice(0, 6);
   $('topList').innerHTML = top.length ? top.map(x => `<li><span class="what">${esc(x.n) || esc(x.k)}<small>${dayName(x.d)}, ${esc(x.k)}</small></span><span class="when">${money(viewUsd(x))}</span></li>`).join('') : '<li class="hint">Nothing in this period.</li>';
+}
+
+// Short plain-language findings, built from whatever is in the chosen period.
+function renderInsights(keys, rows) {
+  const set = new Set(keys);
+  const out = [];
+  const items = ledger.filter(x => x.t === 'expense' && set.has(x.d.slice(0, 7)));
+  const total = items.reduce((a, x) => a + viewUsd(x), 0);
+  if (!items.length) {
+    $('insights').innerHTML = '<li class="hint">Nothing in this period.</li>';
+    return;
+  }
+  const byCat = {};
+  for (const x of items) if (x.k !== plainCategory('expense')) byCat[x.k] = (byCat[x.k] || 0) + viewUsd(x);
+  const [topCat] = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+  if (topCat) out.push(`<b>${esc(topCat[0])}</b> was your biggest known cost, at ${Math.round((topCat[1] / total) * 100)}% of spending.`);
+  if (rows.length > 1) {
+    const peak = rows.reduce((a, r) => (r.out > a.out ? r : a), rows[0]);
+    out.push(`You spent the most in <b>${monthName(peak.k)}</b>: ${state.ccy} ${fmt(peak.out)}.`);
+  }
+  const perDay = {};
+  for (const x of items) perDay[x.d] = (perDay[x.d] || 0) + viewUsd(x);
+  const spent = Object.values(perDay).sort((a, b) => a - b);
+  out.push(`On a day you spend, it's usually about <b>${money(spent[Math.floor(spent.length / 2)])}</b>.`);
+  const today = new Date().toISOString().slice(0, 10);
+  const lastDayOf = lastDate(keys[keys.length - 1]);
+  const end = lastDayOf > today ? today : lastDayOf;
+  const days = Math.round((Date.parse(end) - Date.parse(`${keys[0]}-01`)) / 864e5) + 1;
+  const free = Math.max(0, days - spent.length);
+  out.push(`<b>${fmt(free)} of ${fmt(days)} days</b> had no spending.`);
+  const other = items.filter(x => x.k === plainCategory('expense')).reduce((a, x) => a + viewUsd(x), 0);
+  if (other / total > 0.25) out.push(`<b>${Math.round((other / total) * 100)}%</b> is still in Other. Sorting it makes this page more useful.`);
+  $('insights').innerHTML = out.map(s => `<li>${s}</li>`).join('');
 }
 
 function balanceRows(keys) {
@@ -83,10 +121,10 @@ function balanceRows(keys) {
   const held = {};
   const rows = [];
   const first = Object.keys(flows).sort()[0];
-  const end = keys[keys.length - 1];
   if (!first) return rows;
   const wanted = new Set(keys);
-  for (let k = first; k <= end; k = Engine.addMonths(k, 1)) {
+  const end = keys[keys.length - 1];
+  for (let k = first < keys[0] ? first : keys[0]; k <= end; k = Engine.addMonths(k, 1)) {
     for (const c in flows[k] || {}) held[c] = (held[c] || 0) + flows[k][c];
     if (!wanted.has(k)) continue;
     let usd = 0;
@@ -96,7 +134,7 @@ function balanceRows(keys) {
   return rows;
 }
 
-function lastDay(ym) {
+function lastDate(ym) {
   const d = new Date(+ym.slice(0, 4), +ym.slice(5), 0);
   return `${ym}-${String(d.getDate()).padStart(2, '0')}`;
 }
@@ -105,7 +143,7 @@ function lastDay(ym) {
 function renderCalendar(keys) {
   const today = new Date().toISOString().slice(0, 10);
   const first = `${keys[0]}-01`;
-  const end = lastDay(keys[keys.length - 1]);
+  const end = lastDate(keys[keys.length - 1]);
   const last = end > today ? today : end;
   const days = {};
   for (const x of ledger) if (x.t === 'expense' && x.d >= first && x.d <= last) days[x.d] = (days[x.d] || 0) + viewUsd(x);
@@ -131,128 +169,55 @@ function renderNotice() {
   $('viewNote').textContent = parts.join(' ');
 }
 
-function categoryOptions(x) {
-  const group = (t, label) => {
-    const list = CATEGORIES[t].includes(x.k) || x.t !== t ? CATEGORIES[t] : [x.k, ...CATEGORIES[t]];
-    return `<optgroup label="${label}">${list.map(k => `<option value="${t}|${esc(k)}"${x.t === t && x.k === k ? ' selected' : ''}>${esc(k)}</option>`).join('')}</optgroup>`;
-  };
-  return group('expense', 'Money out') + group('income', 'Money in');
-}
-
-function renderTransactions() {
-  const keys = new Set(periodMonths());
-  const q = $('txSearch').value.trim().toLowerCase();
-  const rows = ledger
-    .filter(x => keys.has(x.d.slice(0, 7))
-      && (!catFilter || (x.t === catFilter.t && x.k === catFilter.k))
-      && (!q || `${x.n} ${x.k} ${x.s}`.toLowerCase().includes(q)))
-    .sort((a, b) => b.d.localeCompare(a.d) || b.id - a.id);
-  $('txCount').textContent = `${fmt(rows.length)} ${rows.length === 1 ? 'transaction' : 'transactions'}`;
-  $('txClear').hidden = !catFilter;
-  $('txClear').textContent = catFilter ? `Showing ${catFilter.k}. Clear` : '';
-  $('txList').innerHTML = rows.slice(0, txShown).map(x => {
-    const sign = x.t === 'income' ? '+' : '-';
-    const original = `${esc(x.c)} ${x.a.toLocaleString('en-US')}`;
-    const converted = x.c !== state.ccy || state.real ? `<small>${money(viewUsd(x))}</small>` : '';
-    return `<li class="tx" data-id="${x.id}">
-      <span class="tx-what">${esc(x.n) || esc(x.k)}<small>${dayName(x.d)}${x.s ? `, ${esc(x.s)}` : ''}</small></span>
-      <select aria-label="Category" data-f="cat">${categoryOptions(x)}</select>
-      <span class="tx-amt ${x.t === 'income' ? 'pos' : ''}">${sign}${original}${converted}</span>
-      <button type="button" class="x" aria-label="Delete this transaction">Delete</button>
-    </li>`;
-  }).join('') || '<li class="hint">No transactions match.</li>';
-  $('txMore').hidden = rows.length <= txShown;
-}
-
-function fillAddCategories() {
-  const t = document.querySelector('input[name=txKind]:checked').value;
-  $('txCat').innerHTML = CATEGORIES[t].map(c => `<option>${esc(c)}</option>`).join('');
-  $('txCat').value = plainCategory(t);
-}
-
 function renderMoney() {
   const has = ledger.length > 0;
   $('moneyEmpty').hidden = has;
   $('moneyFull').hidden = !has;
   if (!has) return;
-  periodOptions();
-  const list = periodMonths();
-  const keys = new Set(list);
+  const keys = selectedMonths();
+  if (!keys.length) return;
+  const set = new Set(keys);
   const months = {};
   for (const x of ledger) {
     const k = x.d.slice(0, 7);
-    if (!keys.has(k)) continue;
+    if (!set.has(k)) continue;
     months[k] = months[k] || { in: 0, out: 0 };
     months[k][x.t === 'income' ? 'in' : 'out'] += viewUsd(x) * unit();
   }
-  const rows = list.map(k => ({ k, in: months[k]?.in || 0, out: months[k]?.out || 0 }));
-  renderSummary(rows);
+  const rows = keys.map(k => ({ k, in: months[k]?.in || 0, out: months[k]?.out || 0 }));
+  renderSummary(keys);
   renderCategories(keys);
   renderTop(keys);
+  renderInsights(keys, rows);
   renderNotice();
   drawInOut(rows);
-  drawBalance(balanceRows(list));
-  renderCalendar(list);
-  renderTransactions();
+  drawBalance(balanceRows(keys));
+  renderCalendar(keys);
+  renderTable();
 }
 
 function initMoney() {
-  $('period').addEventListener('change', () => { txShown = 40; renderMoney(); });
-  const dialog = $('addDialog');
-  $('addOpen').addEventListener('click', () => {
-    $('txMsg').textContent = '';
-    dialog.showModal();
-    $('txAmount').focus();
-  });
-  $('addCancel').addEventListener('click', () => dialog.close());
-  dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
-  document.querySelectorAll('input[name=txKind]').forEach(i => i.addEventListener('change', fillAddCategories));
-
-  $('addBox').addEventListener('submit', e => {
-    e.preventDefault();
-    const a = parseNumber($('txAmount').value);
-    const d = $('txDate').value;
-    if (!(a > 0) || !d) { $('txMsg').textContent = 'Enter a date and an amount.'; return; }
-    const t = document.querySelector('input[name=txKind]:checked').value;
-    ledger.push({ id: ledger.reduce((m, i) => Math.max(m, i.id), 0) + 1, d, a, c: $('txCcy').value, t, k: $('txCat').value, n: $('txNote').value.trim().slice(0, 120), s: '' });
-    saveLedger();
-    refreshAll();
-    $('txAmount').value = '';
-    $('txNote').value = '';
-    dialog.close();
-  });
-
-  $('txSearch').addEventListener('input', () => { txShown = 40; renderTransactions(); });
-  $('txMore').addEventListener('click', () => { txShown += 100; renderTransactions(); });
-  $('txClear').addEventListener('click', () => { catFilter = null; renderMoney(); });
-
   const pickCategory = e => {
-    const b = e.target.closest('.cat');
+    const b = e.target.closest('[data-cat]');
     if (!b) return;
-    const same = catFilter && catFilter.t === b.dataset.t && catFilter.k === b.dataset.k;
-    catFilter = same ? null : { t: b.dataset.t, k: b.dataset.k };
-    txShown = 40;
+    txFilter.cat = txFilter.cat === b.dataset.cat ? '' : b.dataset.cat;
+    txPage = 0;
     renderMoney();
-    if (catFilter) $('txSec').scrollIntoView({ block: 'start' });
+    if (txFilter.cat) $('txSec').scrollIntoView({ block: 'start' });
   };
   $('catOut').addEventListener('click', pickCategory);
   $('catIn').addEventListener('click', pickCategory);
 
-  $('txList').addEventListener('change', e => {
-    if (e.target.dataset.f !== 'cat') return;
-    const x = ledger.find(i => i.id === +e.target.closest('.tx').dataset.id);
-    if (!x) return;
-    const [t, ...k] = e.target.value.split('|');
-    x.t = t;
-    x.k = k.join('|');
-    saveLedger();
-    refreshAll();
+  $('inOut').addEventListener('click', e => {
+    const m = e.target.dataset.month;
+    if (m) setRangeMonths(m, m);
   });
-  $('txList').addEventListener('click', e => {
-    if (!e.target.classList.contains('x')) return;
-    const id = +e.target.closest('.tx').dataset.id;
-    ledger = ledger.filter(i => i.id !== id);
-    saveLedger();
-    refreshAll();
+  $('calendar').addEventListener('click', e => {
+    const d = e.target.dataset.day;
+    if (!d) return;
+    txFilter.day = d;
+    txPage = 0;
+    renderTable();
+    $('txSec').scrollIntoView({ block: 'start' });
   });
 }

@@ -4,6 +4,7 @@ const TOUR_STEPS = [
   { tab: 'freedom', el: 'inputs', t: 'Try your own numbers', p: 'Change these to see your date move. Open "How this is worked out" under any result to see the formula.' },
   { tab: 'money', el: 'addOpen', t: 'Track your money', p: 'Add income and expenses here. Your averages then feed into your freedom date.' },
   { tab: 'money', el: 'topbar', t: 'See it your way', p: 'Pick the currency to view everything in, and save your plan from the menu, because your numbers stay in this browser.' },
+  { tab: 'money', el: 'rangeBox', t: 'Choose your time range', p: 'Once you have transactions, drag either end of this timeline. Everything on the page follows it.', optional: true },
 ];
 let tourAt = -1;
 
@@ -24,6 +25,7 @@ function showStep(i) {
   tourAt = i;
   const s = TOUR_STEPS[i];
   showTab(s.tab);
+  if (s.optional && $(s.el).hidden) { closeTour(); return; }
   $('tourCount').textContent = `Step ${i + 1} of ${TOUR_STEPS.length}`;
   $('tourTitle').textContent = s.t;
   $('tourText').textContent = s.p;

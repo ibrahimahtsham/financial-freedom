@@ -59,7 +59,12 @@ function renderFreedom() {
   $('runV').textContent = f.runway === Infinity ? 'No limit' : f.runway >= 120 ? '10+ years' : f.runway === 0 ? 'Under a month' : duration(f.runway);
   $('runD').textContent = 'If your income stopped today.';
   $('numD').textContent = `To live on ${money(live)} a month.`;
-  $('tiles').classList.toggle('runway-first', save <= 0 && hit !== 0);
+  const pays = state.cur / Engine.FREEDOM_MULTIPLE / 12;
+  $('potV').textContent = `${money(pays)} a month`;
+  $('potD').textContent = live > 0 ? `That is ${Math.round(Math.min(1, pays / live) * 100)}% of what you want to live on.` : 'If you stopped adding to it today.';
+  $('potHow').innerHTML = `<code>${money(state.cur)} ÷ ${Engine.FREEDOM_MULTIPLE} ÷ 12 = ${money(pays)}</code>
+    <p>This is the same 4% rule in reverse: 4% of your savings each year, split across 12 months.</p>`;
+  $('tileRun').classList.toggle('first', save <= 0 && hit !== 0);
 
   // How each result is worked out
   const yearly = live * 12;

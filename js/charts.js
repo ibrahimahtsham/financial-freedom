@@ -20,17 +20,17 @@ function setChart(box, W, H, markup) {
   box.innerHTML = markup;
 }
 
-const chartWidth = box => Math.max(280, box.parentElement.clientWidth - 16);
+const chartWidth = box => Math.max(280, box.parentElement.clientWidth);
 
 // Income and spending side by side for each month.
 function drawInOut(rows) {
   const box = $('inOut');
   if (!box.parentElement.clientWidth || !rows.length) return;
-  const W = chartWidth(box), H = 220, L = 52, R = 8, T = 10, B = 24;
+  const W = chartWidth(box), H = 260, L = 52, R = 8, T = 10, B = 24;
   const top = Math.max(...rows.flatMap(r => [r.in, r.out]), 1) * 1.1;
   const y = v => T + (1 - v / top) * (H - T - B);
   const slot = (W - L - R) / rows.length;
-  const bar = Math.max(2, Math.min(16, (slot - 4) / 2));
+  const bar = Math.max(2, Math.min(24, (slot - 4) / 2));
   const every = Math.ceil(rows.length / (W < 480 ? 3 : 8));
   let o = yGrid(y, top, 4, L, W - R);
   rows.forEach((r, i) => {
@@ -38,7 +38,7 @@ function drawInOut(rows) {
     const tip = `${monthName(r.k)}\nIn: ${state.ccy} ${fmt(r.in)}\nOut: ${state.ccy} ${fmt(r.out)}`;
     if (r.in > 0) o += `<rect fill="var(--in)" x="${x}" y="${y(r.in)}" width="${bar}" height="${H - B - y(r.in)}" rx="2"/>`;
     if (r.out > 0) o += `<rect fill="var(--out)" x="${x + bar + 2}" y="${y(r.out)}" width="${bar}" height="${H - B - y(r.out)}" rx="2"/>`;
-    o += `<rect class="hit" x="${L + i * slot}" y="${T}" width="${slot}" height="${H - T - B}" data-tip="${esc(tip)}"/>`;
+    o += `<rect class="hit" x="${L + i * slot}" y="${T}" width="${slot}" height="${H - T - B}" data-tip="${esc(tip)}" data-month="${r.k}"/>`;
     if (i % every === 0) o += `<text x="${L + i * slot + 2}" y="${H - 6}">${monthName(r.k)}</text>`;
   });
   setChart(box, W, H, o);
@@ -47,7 +47,7 @@ function drawInOut(rows) {
 function drawBalance(rows) {
   const box = $('balance');
   if (!box.parentElement.clientWidth || !rows.length) return;
-  const W = chartWidth(box), H = 180, L = 52, R = 12, T = 10, B = 24;
+  const W = chartWidth(box), H = 260, L = 52, R = 12, T = 10, B = 24;
   const top = Math.max(...rows.map(r => r.v), 1) * 1.1;
   const y = v => T + (1 - Math.max(0, v) / top) * (H - T - B);
   const x = i => L + (rows.length > 1 ? (i / (rows.length - 1)) * (W - L - R) : 0);
@@ -65,8 +65,8 @@ function drawBalance(rows) {
 }
 
 // One square per day, darker for more spending. Levels come from the person's own spread.
-function calendarStrip(days, level, startDate, endDate) {
-  const size = 13, gap = 3, step = size + gap, top = 16, left = 2;
+function calendarStrip(days, level, startDate, endDate, step) {
+  const gap = 3, size = step - gap, top = 16, left = 2;
   const start = new Date(`${startDate}T12:00:00`);
   start.setDate(start.getDate() - start.getDay());
   const end = new Date(`${endDate}T12:00:00`);
@@ -82,7 +82,7 @@ function calendarStrip(days, level, startDate, endDate) {
       o += `<text x="${left + col * step}" y="10">${d.toLocaleDateString('en-US', { month: 'short' })}</text>`;
     }
     const v = (days[iso] || 0) * unit();
-    o += `<rect class="day l${level(days[iso] || 0)}" x="${left + col * step}" y="${top + d.getDay() * step}" width="${size}" height="${size}" rx="2" data-tip="${esc(`${dayName(iso)}\n${v > 0 ? `${state.ccy} ${fmt(v)}` : 'No spending'}`)}"/>`;
+    o += `<rect class="day l${level(days[iso] || 0)}" x="${left + col * step}" y="${top + d.getDay() * step}" width="${size}" height="${size}" rx="2" data-day="${iso}" data-tip="${esc(`${dayName(iso)}\n${v > 0 ? `${state.ccy} ${fmt(v)}` : 'No spending'}`)}"/>`;
   }
   const W = left + (col + 1) * step + 24;   // room for a month label on the last column
   const H = top + 7 * step;
@@ -94,7 +94,10 @@ function drawCalendar(days, strips) {
   const cut = q => spent[Math.floor(spent.length * q)] ?? 0;
   const cuts = [cut(0.25), cut(0.5), cut(0.75)];
   const level = v => (v <= 0 ? 0 : 1 + cuts.filter(c => v > c).length);
-  $('calendar').innerHTML = strips.map(s => `<div class="cal-year">${s.label ? `<h3>${s.label}</h3>` : ''}${calendarStrip(days, level, s.from, s.to)}</div>`).join('');
+  const weeks = Math.max(...strips.map(s => Math.ceil((Date.parse(s.to) - Date.parse(s.from)) / 6048e5) + 2));
+  const room = $('calendar').parentElement.clientWidth - 28;
+  const step = Math.max(14, Math.min(28, Math.floor(room / weeks)));
+  $('calendar').innerHTML = strips.map(s => `<div class="cal-year">${s.label ? `<h3>${s.label}</h3>` : ''}${calendarStrip(days, level, s.from, s.to, step)}</div>`).join('');
 }
 
 let growthView = null;
@@ -104,7 +107,7 @@ function drawGrowth(m) {
   if (!m || !box.parentElement.clientWidth) return;
   const { points, goalUsd } = m;
   const u = unit();
-  const W = chartWidth(box), H = W < 480 ? 240 : 300, L = 52, R = 24, T = 14, B = 26;
+  const W = chartWidth(box), H = W < 480 ? 240 : 380, L = 52, R = 24, T = 14, B = 26;
   const maxX = points[points.length - 1].y;
   const goal = goalUsd * u;
   const top = Math.max(goal * 1.15, points[points.length - 1].mid * u * 1.05, points[0].mid * u * 1.15, 1);

@@ -7,6 +7,7 @@ const RATE_KEY = `${KEY}-rates`;
 const INFLATION_KEY = `${KEY}-inflation`;
 const TOUR_KEY = `${KEY}-tour`;
 const TAB_KEY = `${KEY}-tab`;
+const RANGE_KEY = `${KEY}-range`;
 const RETURN_SPREAD = 2;
 
 const POPULAR_CURRENCIES = ['USD', 'EUR', 'GBP', 'SAR', 'AED', 'PKR', 'INR', 'QAR', 'KWD', 'OMR', 'BHD', 'CAD', 'AUD'];

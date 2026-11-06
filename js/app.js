@@ -41,7 +41,8 @@ function refreshAll() {
 function moneyControls() {
   const hide = activeTab !== 'money' || !ledger.length;
   $('realWrap').hidden = hide;
-  $('period').hidden = hide;
+  $('rangeBox').hidden = hide;
+  $('addOpen').hidden = activeTab !== 'money';
 }
 
 function showTab(name) {
@@ -63,6 +64,7 @@ function showApp() {
   $('welcome').hidden = state.started;
   $('app').hidden = !state.started;
   if (!state.started) return;
+  renderRange();
   showTab(activeTab);
   refreshAll();
 }
@@ -76,16 +78,32 @@ function fetchData() {
   refreshInflation(ledger.map(x => x.c), () => { if (state.started) refreshAll(); });
 }
 
-function exportPlan() {
-  const blob = new Blob([JSON.stringify(planFile(), null, 1)], { type: 'application/json' });
+function downloadFile(name, text, type) {
   const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `financial-freedom-plan-${new Date().toISOString().slice(0, 10)}.json`;
+  link.href = URL.createObjectURL(new Blob([text], { type }));
+  link.download = name;
   document.body.append(link);
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+}
+
+function exportPlan() {
+  downloadFile(`financial-freedom-plan-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(planFile(), null, 1), 'application/json');
   $('menuNote').textContent = 'Plan saved to your downloads.';
+}
+
+let toastTimer = 0;
+function showToast(text, undo) {
+  $('toastText').textContent = text;
+  $('toastUndo').hidden = !undo;
+  $('toastUndo').onclick = () => {
+    $('toast').hidden = true;
+    undo();
+  };
+  $('toast').hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').hidden = true; }, undo ? 6000 : 2500);
 }
 
 async function importPlan(file) {
@@ -96,9 +114,10 @@ async function importPlan(file) {
     state = { ...cleanState(j.plan), started: true };
     ledger = cleanLedger(j.history);
     saveLedger();
-    txShown = 40;
-    catFilter = null;
+    txFilter = defaultTxFilter();
+    txPage = 0;
     writeStored(TOUR_KEY, true);
+    writeStored(RANGE_KEY, null);
     activeTab = ledger.length ? 'money' : 'freedom';
     showApp();
     refreshInflation(ledger.map(x => x.c), refreshAll);
@@ -199,6 +218,8 @@ function initTopBar() {
 
 function boot() {
   initCharts();
+  initRange();
+  initTable();
   initMoney();
   initFreedom();
   initTutorial();
@@ -212,9 +233,12 @@ function boot() {
   fillAddCategories();
   const hash = location.hash.slice(1);
   activeTab = TABS.includes(hash) ? hash : readStored(TAB_KEY, ledger.length ? 'money' : 'freedom');
-  new ResizeObserver(() => {
-    if (!state.started) return;
-    if (activeTab === 'money' && ledger.length) renderMoney();
+  let width = 0;
+  new ResizeObserver(entries => {
+    const next = entries[0].contentRect.width;
+    if (!state.started || next === width) return;
+    width = next;
+    if (activeTab === 'money' && ledger.length) queueMoneyRender();
     if (activeTab === 'freedom' && freedomView) drawGrowth(freedomView);
   }).observe($('app'));
   showApp();
