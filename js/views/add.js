@@ -103,10 +103,8 @@ function renderRenames() {
   const list = (t, id) => {
     const counts = {};
     for (const x of ledger) if (x.t === t) counts[x.k] = (counts[x.k] || 0) + 1;
-    const rows = categoryList(t).filter(k => counts[k] && canRename(t, k));
-    $(id).innerHTML = rows.length
-      ? rows.map(k => `<li><span class="ren-name">${esc(k)}</span><small>${fmt(counts[k])}</small><button type="button" class="x" data-ren="${t}|${esc(k)}">Rename</button></li>`).join('')
-      : '<li class="hint">Nothing to rename yet.</li>';
+    const rows = categoryList(t).filter(k => (counts[k] || state.ownCats[t].includes(k)) && canRename(t, k));
+    $(id).innerHTML = `${rows.map(k => `<li><span class="ren-name">${esc(k)}</span><small>${fmt(counts[k] || 0)}</small>${counts[k] ? '' : `<button type="button" class="x" data-rm="${t}|${esc(k)}">Remove</button>`}<button type="button" class="x" data-ren="${t}|${esc(k)}">Rename</button></li>`).join('')}<li><button type="button" class="link" data-new="${t}">+ Add new</button></li>`;
   };
   list('expense', 'renOut');
   list('income', 'renIn');
@@ -118,13 +116,32 @@ function renameCategory(t, from, typed) {
   if (!to || to === from) { renderRenames(); return; }
   const items = ledger.filter(x => x.t === t && x.k === from);
   const picks = state.quick.filter(q => q.t === t && q.k === from);
-  const move = k => {
-    [...items, ...picks].forEach(x => { x.k = k; });
+  const move = (a, b) => {
+    [...items, ...picks].forEach(x => { x.k = b; });
+    state.ownCats[t] = [...new Set(state.ownCats[t].map(k => (k === a ? b : k)))];
     txFilter.cat = '';
     ledgerChanged();
   };
-  move(to);
-  showToast(`Renamed to ${to}.`, () => move(from));
+  move(from, to);
+  showToast(`Renamed to ${to}.`, () => move(to, from));
+}
+
+function addCategory(t, typed) {
+  const name = categoryName(t, typed);
+  if (!name) { renderRenames(); return; }
+  if (categoryList(t).includes(name)) {
+    renderRenames();
+    showToast(`You already have ${name}.`);
+    return;
+  }
+  state.ownCats[t] = [...state.ownCats[t], name];
+  refreshAll();
+  showToast(`Added ${name}.`);
+}
+
+// Keeps the form's dropdown in step with new and renamed categories.
+function refreshFormCategories() {
+  if ($('txCat').value !== NEW_CATEGORY) fillAddCategories($('txCat').value);
 }
 
 // What the app thinks is in one bank, in that bank's main type of money.
@@ -179,6 +196,7 @@ function renderAdd() {
   renderLatest();
   renderRenames();
   renderCheck();
+  refreshFormCategories();
 }
 
 function openAddPage() {
@@ -238,10 +256,16 @@ function initAdd() {
   });
 
   const rename = e => {
-    if (!e.target.dataset.ren) return;
-    const [t, ...k] = e.target.dataset.ren.split('|');
-    const from = k.join('|');
-    nameBox(e.target.closest('li').querySelector('.ren-name'), from, text => renameCategory(t, from, text));
+    const { ren, rm, new: fresh } = e.target.dataset;
+    if (fresh) nameBox(e.target, '', text => addCategory(fresh, text));
+    if (!ren && !rm) return;
+    const [t, ...k] = (ren || rm).split('|');
+    const name = k.join('|');
+    if (ren) nameBox(e.target.closest('li').querySelector('.ren-name'), name, text => renameCategory(t, name, text));
+    else {
+      state.ownCats[t] = state.ownCats[t].filter(c => c !== name);
+      refreshAll();
+    }
   };
   $('renOut').addEventListener('click', rename);
   $('renIn').addEventListener('click', rename);

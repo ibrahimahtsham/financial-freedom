@@ -13,7 +13,7 @@ const thisMonth = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 
-const defaultState = () => ({ started: false, ccy: 'USD', real: false, cur: null, save: 0, live: null, ret: 5, hiddenCols: [], quick: [], last: { c: '', s: '' } });
+const defaultState = () => ({ started: false, ccy: 'USD', real: false, cur: null, save: 0, live: null, ret: 5, hiddenCols: [], quick: [], last: { c: '', s: '' }, ownCats: { expense: [], income: [] } });
 
 const amount = v => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
 
@@ -29,6 +29,9 @@ function cleanState(raw) {
   s.ret = Math.min(20, amount(raw.ret) ?? 5);
   if (Array.isArray(raw.hiddenCols)) s.hiddenCols = raw.hiddenCols.filter(c => typeof c === 'string');
   if (Array.isArray(raw.quick)) s.quick = raw.quick.filter(q => q && q.a > 0 && Number.isFinite(q.a) && /^[A-Z]{3}$/.test(q.c) && ['income', 'expense'].includes(q.t)).slice(0, 12).map(q => ({ a: q.a, c: q.c, t: q.t, k: String(q.k || 'Other').slice(0, 30), n: String(q.n || '').slice(0, 120), s: String(q.s || '').slice(0, 20) }));
+  for (const t of ['expense', 'income']) {
+    if (Array.isArray(raw.ownCats?.[t])) s.ownCats[t] = [...new Set(raw.ownCats[t].filter(k => typeof k === 'string' && k.trim()).map(k => k.slice(0, 30)))].slice(0, 50);
+  }
   if (raw.last && typeof raw.last === 'object') s.last = { c: /^[A-Z]{3}$/.test(raw.last.c) ? raw.last.c : '', s: String(raw.last.s || '').slice(0, 20) };
   return s;
 }
@@ -36,10 +39,11 @@ function cleanState(raw) {
 const RENAMED_CATEGORIES = { Expense: 'Other', Income: 'Other', Transfer: 'Other', 'Refund or reversal': 'Money back', 'Job or family': 'Other', Refund: 'Money back', 'Own accounts': 'My other banks', Entertainment: 'Fun', Software: 'Apps', Investments: 'Investing' };
 const plainCategory = type => CATEGORIES[type][CATEGORIES[type].length - 1];
 
-// Your own categories live on the items that use them, so they are saved with your
-// money and disappear by themselves once nothing uses them.
+// Categories made while adding an item live on the items that use them, and disappear
+// once nothing uses them. Ones made on the Add page stay until they are removed.
 function categoryList(type) {
-  const own = [...new Set(ledger.filter(x => x.t === type && !CATEGORIES[type].includes(x.k)).map(x => x.k))].sort();
+  const used = ledger.filter(x => x.t === type).map(x => x.k);
+  const own = [...new Set([...used, ...state.ownCats[type]])].filter(k => !CATEGORIES[type].includes(k)).sort();
   return [...CATEGORIES[type].slice(0, -1), ...own, plainCategory(type)];
 }
 
