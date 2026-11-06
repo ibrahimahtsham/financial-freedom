@@ -210,9 +210,10 @@ function initMoney() {
     const b = e.target.closest('[data-cat]');
     if (!b) return;
     txFilter.cat = txFilter.cat === b.dataset.cat ? '' : b.dataset.cat;
+    txFilter.day = '';
     txPage = 0;
     renderMoney();
-    if (txFilter.cat) $('txSec').scrollIntoView({ block: 'start' });
+    if (txFilter.cat && tourAt < 0) $('txSec').scrollIntoView({ block: 'start' });
   };
   $('catOut').addEventListener('click', pickCategory);
   $('catIn').addEventListener('click', pickCategory);
@@ -225,8 +226,10 @@ function initMoney() {
     const d = e.target.dataset.day;
     if (!d) return;
     txFilter.day = d;
+    txFilter.cat = '';
     txPage = 0;
-    renderTable();
-    $('txSec').scrollIntoView({ block: 'start' });
+    renderMoney();
+    if (tourAt < 0) $('txSec').scrollIntoView({ block: 'start' });
+    else showToast(`The table now shows ${dayName(d)}.`);
   });
 }

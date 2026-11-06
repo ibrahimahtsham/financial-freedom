@@ -1,16 +1,17 @@
 // The guided tour. Each step opens its tab and highlights one or more areas.
-// Steps with `tryIt` leave the page usable, so people can use the real control.
+// The highlighted area stays usable, and everything outside it is blocked.
+// `locked` steps block everything, and `holdRange` steps undo any zooming on the way out.
 const TOUR_STEPS = [
-  { section: 'Welcome', t: 'Welcome to Financial Freedom', p: 'This app does two things. Money shows where your money goes. Freedom shows how much you need invested so you no longer depend on a salary, and when you could get there. This takes about two minutes.' },
+  { section: 'Welcome', locked: true, t: 'Welcome to Financial Freedom', p: 'This app does two things. Money shows where your money goes. Freedom shows how much you need invested so you no longer depend on a salary, and when you could get there. This takes about two minutes.' },
 
   { section: 'Money', tab: 'money', els: ['rangeBox'], t: 'Pick your time range', p: 'This timeline controls everything on the Money page. The small bars show your spending each month.', tryIt: 'Try it: drag either end, drag the middle to slide the window, or press a button like 2026.' },
   { section: 'Money', tab: 'money', els: ['realWrap', 'ccy'], t: 'See it your way', p: 'Every transaction keeps its original amount. Here you choose how to view them: in any currency, and either as paid or raised to today\'s prices, so old spending is fair to compare.', tryIt: "Try it: switch to Today's prices and watch the numbers change." },
   { section: 'Money', tab: 'money', els: ['tileIn', 'tileKept'], t: 'Your summary', p: 'What came in, what went out, what was left, and how much you kept. It also compares this period with the one before it.' },
-  { section: 'Money', tab: 'money', els: ['inOut'], t: 'Month by month', p: 'Money in and money out, side by side. Hover over a month for the exact amounts, or click one to zoom in on it.' },
-  { section: 'Money', tab: 'money', els: ['catOut', 'catIn', 'insights'], t: 'Where your money goes', p: 'Your categories, biggest first. Click one to see just those transactions. What stands out picks out useful patterns for you.' },
-  { section: 'Money', tab: 'money', els: ['calendar'], t: 'Spending by day', p: 'Each square is a day, and darker means more spent. It shows your habits at a glance. Click a day to see what you spent.' },
-  { section: 'Money', tab: 'money', els: ['txSec'], t: 'Every transaction', p: 'Search, filter, or click a column heading to sort. You can change a category right in the row, edit or delete anything, and export the list to a spreadsheet.' },
-  { section: 'Money', tab: 'money', els: ['addOpen'], t: 'Add income or spending', p: 'Use this button whenever you want to record something. If an amount is in another currency, just pick that currency.' },
+  { section: 'Money', tab: 'money', els: ['inOut'], holdRange: true, t: 'Month by month', p: 'Money in and money out, side by side, so you can spot the months that went wrong or right.', tryIt: 'Try it: hover over a month for the exact amounts, or click one to zoom in. Your range comes back when you press Next.' },
+  { section: 'Money', tab: 'money', els: ['catOut', 'catIn', 'insights'], t: 'Where your money goes', p: 'Your categories, biggest first. What stands out picks out useful patterns for you.', tryIt: 'Try it: click a category. It filters the transactions table, which is coming up in two steps.' },
+  { section: 'Money', tab: 'money', els: ['calendar'], t: 'Spending by day', p: 'Each square is a day, and darker means more spent, so your habits show at a glance.', tryIt: 'Try it: hover over a square to see that day, or click one to filter the transactions table.' },
+  { section: 'Money', tab: 'money', els: ['txSec'], t: 'Every transaction', p: 'You can change a category right in the row, edit or delete anything, and export the list to a spreadsheet.', tryIt: 'Try it: click a column heading to sort, or search for something.' },
+  { section: 'Money', tab: 'money', els: ['addOpen'], t: 'Add income or spending', p: 'Use this button whenever you want to record something. If an amount is in another currency, just pick that currency.', tryIt: 'Try it: press Add to see the form, then press Cancel to come back.' },
 
   { section: 'Freedom', tab: 'freedom', els: ['hero'], t: 'Your number', p: 'This is how much you need invested to live on your chosen amount for good. It is 25 times your yearly costs, which comes from the 4% rule.', tryIt: 'Try it: open "How this is worked out" to see the sum with your own numbers.' },
   { section: 'Freedom', tab: 'freedom', els: ['tileDate', 'tileRun', 'tilePot'], t: 'Where you stand', p: 'When you could reach your number, how long your savings would last with no income, and what they could already pay you. Each one shows its formula too.' },
@@ -18,13 +19,25 @@ const TOUR_STEPS = [
   { section: 'Freedom', tab: 'freedom', els: ['chart'], t: 'Your timeline', p: 'How your pot could grow toward your number. The shaded band shows what happens if returns turn out lower or higher, because nobody knows them for sure.' },
   { section: 'Freedom', tab: 'freedom', els: ['takeTable'], t: 'What it would take', p: 'Pick how soon you want to get there and see what to save, and the income you would need. It is useful even with no income right now, as a target for your next job.' },
 
-  { section: 'Keep it safe', tab: 'freedom', els: ['menu'], openMenu: true, t: 'Save your plan', p: 'Your numbers stay in this browser and nothing is uploaded. So save your plan to a file now and then, because clearing your browser would erase it. You can replay this tutorial here any time.' },
+  { section: 'Keep it safe', tab: 'freedom', els: ['menu', 'menuBox'], openMenu: true, locked: true, t: 'Save your plan', p: 'Your numbers stay in this browser and nothing is uploaded. So save your plan to a file now and then, because clearing your browser would erase it. You can replay this tutorial here any time.' },
 ];
 
 let tourAt = -1;
 let tourDemo = false;
 let tourReturnTab = 'money';
 let tourSavedLedger = null;
+let tourHeldRange = null;
+
+function releaseRange() {
+  if (tourHeldRange) setRange(...tourHeldRange);
+  tourHeldRange = null;
+}
+
+function clearTourFilters() {
+  txFilter = defaultTxFilter();
+  txPage = 0;
+  if (ledger.length) renderMoney();
+}
 
 // A believable year of money for people who have nothing tracked yet.
 function exampleLedger() {
@@ -101,9 +114,12 @@ function scrollToStep(s) {
 }
 
 function showStep(i) {
+  releaseRange();
   tourAt = i;
   const s = TOUR_STEPS[i];
+  if (s.tab === 'freedom') clearTourFilters();
   if (s.tab) showTab(s.tab);
+  if (s.holdRange) tourHeldRange = [rangeFrom, rangeTo];
   $('menu').open = Boolean(s.openMenu);
   $('tourSection').textContent = s.section;
   $('tourCount').textContent = `${i + 1} of ${TOUR_STEPS.length}`;
@@ -115,8 +131,8 @@ function showStep(i) {
   $('tourDemo').hidden = !tourDemo || s.tab !== 'money';
   $('tourBack').hidden = i === 0;
   $('tourNext').textContent = i === 0 ? 'Start' : i === TOUR_STEPS.length - 1 ? 'Finish' : 'Next';
-  $('tourShade').hidden = Boolean(s.tryIt);
-  $('tourSpot').classList.toggle('live', Boolean(s.tryIt));
+  $('tourShade').hidden = !s.locked;
+  $('tourSpot').classList.toggle('live', !s.locked);
   scrollToStep(s);
   placeTour();
   $('tourNext').focus({ preventScroll: true });
@@ -139,6 +155,8 @@ function openTour() {
 }
 
 function closeTour() {
+  releaseRange();
+  clearTourFilters();
   tourAt = -1;
   tourParts.forEach(id => { $(id).hidden = true; });
   $('menu').open = false;
@@ -160,6 +178,19 @@ function initTutorial() {
   $('tourSkip').addEventListener('click', closeTour);
   $('tourBack').addEventListener('click', () => showStep(tourAt - 1));
   $('tourNext').addEventListener('click', () => (tourAt === TOUR_STEPS.length - 1 ? closeTour() : showStep(tourAt + 1)));
+  // Blocks clicks outside the highlighted area, but never inside the tour card or a pop-up.
+  const guard = e => {
+    if (tourAt < 0 || e.detail === 0 || e.target.closest?.('#tourCard, dialog')) return;
+    const r = tourRect(TOUR_STEPS[tourAt]);
+    const pad = 8;
+    const inside = r && e.clientX >= r.left - pad && e.clientX <= r.right + pad && e.clientY >= r.top - pad && e.clientY <= r.bottom + pad;
+    if (!inside) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+  addEventListener('pointerdown', guard, true);
+  addEventListener('click', guard, true);
   addEventListener('resize', placeTour);
   addEventListener('scroll', placeTour, { passive: true });
   addEventListener('keydown', e => {
@@ -168,7 +199,7 @@ function initTutorial() {
     if (e.key === 'Escape') closeTour();
     else if (e.key === 'ArrowRight' && !typing && document.activeElement.getAttribute('role') !== 'slider') $('tourNext').click();
     else if (e.key === 'ArrowLeft' && !typing && tourAt > 0 && document.activeElement.getAttribute('role') !== 'slider') showStep(tourAt - 1);
-    else if (e.key === 'Tab' && !TOUR_STEPS[tourAt].tryIt) {
+    else if (e.key === 'Tab' && TOUR_STEPS[tourAt].locked) {
       const buttons = [...$('tourCard').querySelectorAll('button')].filter(b => !b.hidden);
       const i = buttons.indexOf(document.activeElement);
       e.preventDefault();
