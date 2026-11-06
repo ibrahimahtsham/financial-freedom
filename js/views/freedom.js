@@ -27,15 +27,15 @@ const moreThanSixty = m => (m === null ? 'over 60 years' : duration(m));
 function renderTake(f) {
   const { cur, goalUsd, spendNow } = f;
   $('takeNote').textContent = f.save > 0
-    ? 'How much to save each month to finish sooner or later, and the income that takes at your current spending.'
-    : "You aren't saving right now, so here's what each timeline would need. Income is that saving plus your current spending.";
+    ? 'How much to save each month to finish sooner or later. The income needed is your saving plus your spending.'
+    : "You aren't saving right now, so here's what each timeline would need. The income needed is your saving plus your spending.";
   const rows = TAKE_YEARS.map(y => {
     const need = Engine.savingFor({ cur, ret: state.ret, goal: goalUsd, months: y * 12 });
     const year = new Date().getFullYear() + y;
     const mine = Math.abs(need - f.save) < 0.5;
-    return `<tr class="${mine ? 'me' : ''}"><td>${y} years, by ${year}</td><td class="num-col">${money(need)} a month</td><td class="num-col">${money(need + spendNow)} a month</td><td class="acts">${mine ? 'Your plan' : `<button type="button" data-save="${need}">Use this</button>`}</td></tr>`;
+    return `<tr class="${mine ? 'me' : ''}"><td>${y} years, by ${year}</td><td class="num-col">${money(need)}</td><td class="num-col">${money(spendNow)}</td><td class="num-col amt">${money(need + spendNow)}</td><td class="acts">${mine ? 'Your plan' : `<button type="button" data-save="${need}">Use this</button>`}</td></tr>`;
   }).join('');
-  $('takeTable').innerHTML = `<thead><tr><th>To finish in</th><th class="num-col">Save</th><th class="num-col">Income needed</th><th></th></tr></thead><tbody>${rows}</tbody>`;
+  $('takeTable').innerHTML = `<thead><tr><th>To finish in</th><th class="num-col">Save a month</th><th class="num-col">Spending a month</th><th class="num-col">Income needed a month</th><th></th></tr></thead><tbody>${rows}</tbody>`;
 }
 
 function renderFreedom() {
@@ -94,7 +94,7 @@ function renderFreedom() {
 
   // Input hints
   $('curHint').textContent = state.cur === null && t.has ? 'Your balance from your transactions.' : '';
-  $('liveHint').textContent = state.live === null && t.has ? "Your last 12 months' average, in today's prices. Leaves out moves between your own accounts and refunds." : '';
+  $('liveHint').textContent = state.live === null && t.has ? "Your average over the last 12 months, in today's prices. Money moved between your own accounts and refunds aren't counted, because you didn't really spend them." : '';
   $('saveHint').textContent = save <= 0 ? 'Put what you expect to save, or pick a timeline below.' : '';
   $('curAuto').hidden = !t.has || state.cur === null;
   $('liveAuto').hidden = !t.has || state.live === null;
@@ -108,6 +108,7 @@ function renderFreedom() {
   set('fLive', fmt(live * u));
   set('fRet', String(state.ret));
   $('fRetR').value = state.ret;
+  document.querySelectorAll('#retChips button').forEach(b => b.classList.toggle('on', +b.dataset.ret === state.ret));
   document.querySelectorAll('.uMine').forEach(e => { e.textContent = state.ccy; });
 
   $('lgMid').textContent = `Pot at ${state.ret}%`;
@@ -131,6 +132,12 @@ function initFreedom() {
   edit('fRet', n => { state.ret = Math.min(20, n); });
   $('fRetR').addEventListener('input', () => {
     state.ret = +$('fRetR').value;
+    saveState();
+    renderFreedom();
+  });
+  $('retChips').addEventListener('click', e => {
+    if (!e.target.dataset.ret) return;
+    state.ret = +e.target.dataset.ret;
     saveState();
     renderFreedom();
   });

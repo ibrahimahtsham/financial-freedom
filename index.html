@@ -186,7 +186,16 @@
           <div class="pick"><label for="fCur">Savings so far</label><span class="num"><span class="unit uMine"></span><input type="text" id="fCur" inputmode="decimal"></span><p class="hint" id="curHint"></p><button type="button" class="link start" id="curAuto" hidden></button></div>
           <div class="pick"><label for="fSave">Saving each month</label><span class="num"><span class="unit uMine"></span><input type="text" id="fSave" inputmode="decimal"></span><p class="hint" id="saveHint"></p></div>
           <div class="pick"><label for="fLive">Want to live on each month</label><span class="num"><span class="unit uMine"></span><input type="text" id="fLive" inputmode="decimal"></span><p class="hint" id="liveHint"></p><button type="button" class="link start" id="liveAuto" hidden></button></div>
-          <div class="pick"><label for="fRet">Yearly return after inflation</label><div class="row"><input type="range" id="fRetR" aria-label="Yearly return after inflation" min="0" max="10" step="0.5"><span class="num"><input class="short" type="text" id="fRet" inputmode="decimal"><span class="unit">%</span></span></div><p class="hint">5% is a reasonable middle guess.</p></div>
+          <div class="pick"><label for="fRet">Yearly return after inflation</label><div class="row"><input type="range" id="fRetR" aria-label="Yearly return after inflation" min="0" max="10" step="0.5"><span class="num"><input class="short" type="text" id="fRet" inputmode="decimal"><span class="unit">%</span></span></div><div class="chips" id="retChips">
+            <button type="button" data-ret="0">Bank account 0%</button>
+            <button type="button" data-ret="3">Cautious mix 3%</button>
+            <button type="button" data-ret="5">Mostly shares 5%</button>
+          </div>
+          <details class="how bare"><summary>What does this mean?</summary><div>
+            <p><strong>Your money grows by being invested.</strong> That usually means funds that own shares in many companies, so it grows as those companies do. This is not interest from your bank.</p>
+            <p><strong>After inflation</strong> means after taking off rising prices. If your investments grow 8% in a year and prices rise 3%, you can really buy about 5% more. All the numbers here use that real growth, so they stay in today's money.</p>
+            <p><strong>These are rough long-term guesses, not promises.</strong> Investments go up and down, and some years they lose money. Money left in a bank account often only keeps up with prices, or falls behind them, so 0% is a fair guess for it.</p>
+          </div></details></div>
         </div>
 
         <section class="panel c8">
