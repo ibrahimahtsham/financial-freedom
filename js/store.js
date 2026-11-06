@@ -30,7 +30,7 @@ function cleanState(raw) {
   return s;
 }
 
-const RENAMED_CATEGORIES = { Expense: 'Other', Income: 'Other', Transfer: 'Other', 'Refund or reversal': 'Refund', 'Job or family': 'Other' };
+const RENAMED_CATEGORIES = { Expense: 'Other', Income: 'Other', Transfer: 'Other', 'Refund or reversal': 'Money back', 'Job or family': 'Other', Refund: 'Money back', 'Own accounts': 'My other banks', Entertainment: 'Fun', Software: 'Apps', Investments: 'Investing' };
 const plainCategory = type => CATEGORIES[type][CATEGORIES[type].length - 1];
 
 function cleanLedger(list) {

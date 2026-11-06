@@ -27,15 +27,15 @@ const moreThanSixty = m => (m === null ? 'over 60 years' : duration(m));
 function renderTake(f) {
   const { cur, goalUsd, spendNow } = f;
   $('takeNote').textContent = f.save > 0
-    ? 'How much to save each month to finish sooner or later. The income needed is your saving plus your spending.'
-    : "You aren't saving right now, so here's what each timeline would need. The income needed is your saving plus your spending.";
+    ? 'Pick when you want to get there. You need to get paid enough to cover your saving and your spending.'
+    : "You aren't saving right now, so here is what each choice would need. You need to get paid enough to cover your saving and your spending.";
   const rows = TAKE_YEARS.map(y => {
     const need = Engine.savingFor({ cur, ret: state.ret, goal: goalUsd, months: y * 12 });
     const year = new Date().getFullYear() + y;
     const mine = Math.abs(need - f.save) < 0.5;
     return `<tr class="${mine ? 'me' : ''}"><td>${y} years, by ${year}</td><td class="num-col">${money(need)}</td><td class="num-col">${money(spendNow)}</td><td class="num-col amt">${money(need + spendNow)}</td><td class="acts">${mine ? 'Your plan' : `<button type="button" data-save="${need}">Use this</button>`}</td></tr>`;
   }).join('');
-  $('takeTable').innerHTML = `<thead><tr><th>To finish in</th><th class="num-col">Save a month</th><th class="num-col">Spending a month</th><th class="num-col">Income needed a month</th><th></th></tr></thead><tbody>${rows}</tbody>`;
+  $('takeTable').innerHTML = `<thead><tr><th>To get there in</th><th class="num-col">Save a month</th><th class="num-col">Spend a month</th><th class="num-col">Get paid a month</th><th></th></tr></thead><tbody>${rows}</tbody>`;
 }
 
 function renderFreedom() {
@@ -44,17 +44,17 @@ function renderFreedom() {
   const u = unit();
   const monthlyPct = (Engine.monthlyRate(state.ret) * 100).toFixed(2);
 
-  $('headline').textContent = goalUsd > 0 ? `Your number is ${bigMoney(goalUsd)}.` : 'What do you want to live on?';
+  $('headline').textContent = goalUsd > 0 ? `You need ${bigMoney(goalUsd)}.` : 'How much do you want to spend each month?';
   let path = '';
   if (goalUsd > 0) {
     if (hit === 0) path = 'You already have enough.';
-    else if (hit !== null) path = `Saving ${money(save)} a month gets you there around ${dateIn(hit)}.`;
-    else if (save <= 0) path = "You aren't saving right now, so there's no date yet.";
-    else path = 'At this pace it takes over 60 years.';
+    else if (hit !== null) path = `If you save ${money(save)} a month, you get there around ${dateIn(hit)}.`;
+    else if (save <= 0) path = "You aren't saving right now, so we can't give a date yet.";
+    else path = 'At this speed it takes over 60 years.';
   }
   $('lede').textContent = goalUsd > 0
-    ? `That is what you need invested to live on ${money(live)} a month for good. You have ${money(cur)} today. ${path}`
-    : 'Enter it below and your number will show here.';
+    ? `If you put that much somewhere it can grow, it could pay you ${money(live)} a month for 30 years or more, without a job. You have ${money(cur)} today. ${path}`
+    : 'Type it below and your goal will show here.';
 
   const frac = goalUsd > 0 ? Math.min(1, cur / goalUsd) : 0;
   const crest = $('crest');
@@ -69,37 +69,38 @@ function renderFreedom() {
   // Results
   $('dateV').textContent = hit === null ? 'No date yet' : hit === 0 ? 'Now' : dateIn(hit);
   $('dateV').className = `v${hit === null ? ' bad' : ''}`;
-  $('dateD').textContent = hit === null ? 'See what it would take below.' : hit === 0 ? 'You have reached your number.' : `${duration(hit)} from now.`;
+  $('dateD').textContent = hit === null ? 'See what it would take below.' : hit === 0 ? 'You have reached your goal.' : `${duration(hit)} from now.`;
   $('runV').textContent = f.runway === Infinity ? 'No limit' : f.runway >= 120 ? '10+ years' : f.runway === 0 ? 'Under a month' : duration(f.runway);
-  $('runD').textContent = 'If you have no income.';
+  $('runD').textContent = 'If no money comes in.';
   $('tileRun').classList.toggle('first', save <= 0 && hit !== 0);
   const pays = cur / Engine.FREEDOM_MULTIPLE / 12;
   $('potV').textContent = `${money(pays)} a month`;
-  $('potD').textContent = live > 0 ? `That is ${Math.round(Math.min(1, pays / live) * 100)}% of what you want to live on.` : 'If you stopped adding to it today.';
+  $('potD').textContent = live > 0 ? `That is ${Math.round(Math.min(1, pays / live) * 100)}% of what you want to spend.` : 'If you stopped adding to it today.';
 
   // How each result is worked out
   const yearly = live * 12;
   $('numHow').innerHTML = `<code>${money(live)} × 12 × ${Engine.FREEDOM_MULTIPLE} = ${money(goalUsd)}</code>
-    <p>That is your monthly costs, times 12 for a year, times 25. The 25 comes from the 4% rule: if you take out about 4% of your money each year, it has historically lasted at least 30 years. So 4% of your number, ${money(yearly)}, covers one year.</p>
-    <p>If you plan to stop young, a safer 3.5% means multiplying by about 28.6, which makes it ${bigMoney(yearly / 0.035)}.</p>`;
+    <p>Take what you spend in a month. Times 12 gives you a year. Times 25 gives you your goal.</p>
+    <p>Why 25? A well-known guide called the 4% rule says that if you only take out about 4% of your money each year, it has usually lasted 30 years or more. So 4% of your goal, ${money(yearly)}, pays for one year.</p>
+    <p>If you plan to stop working young, your money has to last longer. Taking out only 3.5% a year is safer, and your goal would be ${bigMoney(yearly / 0.035)}.</p>`;
   const own = hit ? cur + save * hit : cur;
   const growth = Math.max(0, goalUsd - own);
-  $('dateHow').innerHTML = `<code>Next month's pot = pot × (1 + ${monthlyPct}%) + ${money(save)}</code>
-    <p>Each month your pot earns its return, which is ${state.ret}% a year or ${monthlyPct}% a month, and then your saving is added. This repeats until it reaches your number.</p>
-    ${hit > 0 ? `<p>You put in ${money(Math.min(own, goalUsd))}, and growth adds about ${money(growth)}. Returns are never certain: at ${f.hi}% it takes ${moreThanSixty(f.hitHi)}, and at ${f.lo}% it takes ${moreThanSixty(f.hitLo)}.</p>` : ''}`;
+  $('dateHow').innerHTML = `<code>Next month's savings = savings × (1 + ${monthlyPct}%) + ${money(save)}</code>
+    <p>Each month your savings grow a little: ${state.ret}% a year is ${monthlyPct}% a month. Then we add what you save. This repeats until you reach your goal.</p>
+    ${hit > 0 ? `<p>You put in ${money(Math.min(own, goalUsd))}, and growth adds about ${money(growth)}. Nobody knows the real growth: at ${f.hi}% it takes ${moreThanSixty(f.hitHi)}, and at ${f.lo}% it takes ${moreThanSixty(f.hitLo)}.</p>` : ''}`;
   $('runHow').innerHTML = `<code>${money(cur)} ÷ ${money(f.spendNow)} = ${f.spendNow > 0 ? (cur / f.spendNow).toFixed(1) : 'no limit'} months</code>
-    <p>That is your savings divided by your monthly spending. It leaves out any growth, to be on the safe side.</p>`;
+    <p>That is your savings divided by what you spend each month. We don't count any growth here, to be safe.</p>`;
   $('potHow').innerHTML = `<code>${money(cur)} ÷ ${Engine.FREEDOM_MULTIPLE} ÷ 12 = ${money(pays)}</code>
-    <p>This is the same 4% rule in reverse: 4% of your savings each year, split across 12 months.</p>`;
+    <p>This is the 4% rule backwards: 4% of your savings each year, split into 12 months.</p>`;
 
   // Input hints
-  $('curHint').textContent = state.cur === null && t.has ? 'Your balance from your transactions.' : '';
-  $('liveHint').textContent = state.live === null && t.has ? "Your average over the last 12 months, in today's prices. Money moved between your own accounts and refunds aren't counted, because you didn't really spend them." : '';
-  $('saveHint').textContent = save <= 0 ? 'Put what you expect to save, or pick a timeline below.' : '';
+  $('curHint').textContent = state.cur === null && t.has ? 'Worked out from your money list.' : '';
+  $('liveHint').textContent = state.live === null && t.has ? "What you spent in a normal month over the last year, at today's prices. Money moved between your banks and money you got back don't count, because you didn't really spend them." : '';
+  $('saveHint').textContent = save <= 0 ? 'Type what you plan to save, or pick a choice further down.' : '';
   $('curAuto').hidden = !t.has || state.cur === null;
   $('liveAuto').hidden = !t.has || state.live === null;
-  $('curAuto').textContent = `Use my balance (${money(t.balance)})`;
-  $('liveAuto').textContent = `Use my average (${money(t.spend)})`;
+  $('curAuto').textContent = `Use what I have (${money(t.balance)})`;
+  $('liveAuto').textContent = `Use my normal month (${money(t.spend)})`;
 
   const focused = document.activeElement;
   const set = (id, v) => { if (focused !== $(id)) $(id).value = v; };
@@ -111,8 +112,8 @@ function renderFreedom() {
   document.querySelectorAll('#retChips button').forEach(b => b.classList.toggle('on', +b.dataset.ret === state.ret));
   document.querySelectorAll('.uMine').forEach(e => { e.textContent = state.ccy; });
 
-  $('lgMid').textContent = `Pot at ${state.ret}%`;
-  $('lgBand').textContent = `${f.lo}% to ${f.hi}%`;
+  $('lgMid').textContent = `Growing ${state.ret}% a year`;
+  $('lgBand').textContent = `If it grows ${f.lo}% to ${f.hi}%`;
   renderTake(f);
   freedomView = f;
   drawGrowth(f);

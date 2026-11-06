@@ -8,9 +8,9 @@ let editingId = null;
 
 const TX_COLUMNS = [
   { key: 'date', label: 'Date' },
-  { key: 'note', label: 'Details', cls: 'wide' },
-  { key: 'cat', label: 'Category' },
-  { key: 'acct', label: 'Account' },
+  { key: 'note', label: 'Note', cls: 'wide' },
+  { key: 'cat', label: 'What for' },
+  { key: 'acct', label: 'Bank' },
   { key: 'amount', label: 'Amount', cls: 'num-col' },
   { key: 'view', label: '', cls: 'num-col' },
 ];
@@ -62,10 +62,10 @@ function fillFilterSelects() {
     const [t, ...k] = c.split('|');
     return `${k.join('|')} (${t === 'income' ? 'in' : 'out'})`;
   };
-  $('txCatFilter').innerHTML = `<option value="">All categories</option>${cats.map(c => `<option value="${esc(c)}">${esc(label(c))}</option>`).join('')}`;
+  $('txCatFilter').innerHTML = `<option value="">Everything</option>${cats.map(c => `<option value="${esc(c)}">${esc(label(c))}</option>`).join('')}`;
   $('txCatFilter').value = txFilter.cat;
   const accts = [...new Set(ledger.map(x => x.s).filter(Boolean))].sort();
-  $('txAcct').innerHTML = `<option value="">All accounts</option>${accts.map(a => `<option>${esc(a)}</option>`).join('')}`;
+  $('txAcct').innerHTML = `<option value="">All banks</option>${accts.map(a => `<option>${esc(a)}</option>`).join('')}`;
   $('txAcct').value = txFilter.acct;
   $('txAcct').hidden = accts.length < 2;
   $('acctList').innerHTML = accts.map(a => `<option value="${esc(a)}">`).join('');
@@ -89,21 +89,21 @@ function renderTable() {
     return `<tr data-id="${x.id}">
       <td class="date">${dayName(x.d)}</td>
       <td class="wide">${esc(x.n) || `<span class="hint">No note</span>`}</td>
-      <td><select aria-label="Category" data-f="cat">${categoryOptions(x)}</select></td>
+      <td><select aria-label="What for" data-f="cat">${categoryOptions(x)}</select></td>
       <td>${esc(x.s)}</td>
       <td class="num-col amt${x.t === 'income' ? ' pos' : ''}">${sign}${esc(x.c)} ${x.a.toLocaleString('en-US')}</td>
       <td class="num-col muted">${convert ? `${sign}${fmt(viewUsd(x) * unit())}` : ''}</td>
       <td class="acts"><button type="button" class="x" data-act="edit">Edit</button><button type="button" class="x" data-act="delete">Delete</button></td>
     </tr>`;
-  }).join('') : '<tr><td colspan="7" class="hint empty">No transactions match.</td></tr>';
+  }).join('') : '<tr><td colspan="7" class="hint empty">Nothing found.</td></tr>';
 
   const net = rows.reduce((a, x) => a + signedUsd(x), 0);
-  $('txCount').textContent = `${fmt(rows.length)} ${rows.length === 1 ? 'transaction' : 'transactions'}, ${net < 0 ? '-' : '+'}${money(Math.abs(net))} overall`;
+  $('txCount').textContent = `${fmt(rows.length)} ${rows.length === 1 ? 'item' : 'items'}, ${net < 0 ? '-' : '+'}${money(Math.abs(net))} in total`;
   $('txPageLabel').textContent = rows.length ? `${fmt(start + 1)} to ${fmt(start + page.length)} of ${fmt(rows.length)}` : '';
   $('txPrev').disabled = txPage === 0;
   $('txNext').disabled = txPage >= pages - 1;
   $('txDay').hidden = !txFilter.day;
-  $('txDay').textContent = txFilter.day ? `Only ${dayName(txFilter.day)}. Clear` : '';
+  $('txDay').textContent = txFilter.day ? `Only ${dayName(txFilter.day)}. Show all` : '';
   $('txSearch').value = txFilter.q;
   $('txType').value = txFilter.type;
 }
@@ -126,7 +126,7 @@ function fillAddCategories(value) {
 
 function openTxDialog(x) {
   editingId = x ? x.id : null;
-  $('addTitle').textContent = x ? 'Edit transaction' : 'Add to your money';
+  $('addTitle').textContent = x ? 'Change this' : 'Add money in or out';
   $('addSave').textContent = x ? 'Save' : 'Add it';
   $('txMsg').textContent = '';
   document.querySelector(`input[name=txKind][value=${x ? x.t : 'expense'}]`).checked = true;
@@ -157,7 +157,7 @@ function initTable() {
     e.preventDefault();
     const a = parseNumber($('txAmount').value);
     const d = $('txDate').value;
-    if (!(a > 0) || !d) { $('txMsg').textContent = 'Enter a date and an amount.'; return; }
+    if (!(a > 0) || !d) { $('txMsg').textContent = 'Type a date and an amount.'; return; }
     const fields = {
       d, a, c: $('txCcy').value, t: document.querySelector('input[name=txKind]:checked').value,
       k: $('txCat').value, n: $('txNote').value.trim().slice(0, 120), s: $('txSource').value.trim().slice(0, 20),

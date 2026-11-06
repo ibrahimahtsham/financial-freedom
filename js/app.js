@@ -22,9 +22,9 @@ function currencyOptions() {
 function renderRateNote() {
   const updated = new Date(rates.at).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
   $('retry').hidden = rateState !== 'failed';
-  $('rateNote').textContent = rateState === 'live' ? `Live exchange rates from ${updated}.`
-    : rateState === 'loading' ? 'Getting exchange rates.'
-      : `No connection, so these are the rates from ${updated}.`;
+  $('rateNote').textContent = rateState === 'live' ? `Prices for changing money were updated on ${updated}.`
+    : rateState === 'loading' ? 'Getting the latest prices for changing money.'
+      : `No internet, so we are using prices for changing money from ${updated}.`;
 }
 
 function refreshAll() {
@@ -121,7 +121,7 @@ async function importPlan(file) {
     activeTab = ledger.length ? 'money' : 'freedom';
     showApp();
     refreshInflation(ledger.map(x => x.c), refreshAll);
-    $('menuNote').textContent = `Loaded ${file.name}.`;
+    $('menuNote').textContent = `Opened ${file.name}.`;
   } catch (e) {
     const message = 'That file is not a Financial Freedom plan.';
     if (state.started) $('menuNote').textContent = message;
@@ -137,7 +137,7 @@ function initWelcome() {
     e.preventDefault();
     const spend = parseNumber($('wSpend').value);
     if (!(spend > 0)) {
-      $('wErr').textContent = 'Enter what you spend in a month to continue.';
+      $('wErr').textContent = 'Type how much you spend in a month first.';
       $('wErr').hidden = false;
       $('wSpend').focus();
       return;

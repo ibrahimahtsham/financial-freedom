@@ -142,7 +142,7 @@ function growthHover(e) {
   $('dot').setAttribute('cx', x(p.y));
   $('dot').setAttribute('cy', y(p.mid));
   $('dot').setAttribute('visibility', 'visible');
-  showTip(`${new Date().getFullYear() + p.y}\nPot: ${money(p.mid)}\nPays you: ${money((p.mid / Engine.FREEDOM_MULTIPLE) / 12)} a month`, e.clientX, e.clientY);
+  showTip(`${new Date().getFullYear() + p.y}\nSavings: ${money(p.mid)}\nPays you: ${money((p.mid / Engine.FREEDOM_MULTIPLE) / 12)} a month`, e.clientX, e.clientY);
 }
 
 function growthLeave() {

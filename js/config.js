@@ -28,7 +28,7 @@ const CURRENCY_COUNTRY = {
 };
 
 // Moving your own money or getting it back isn't a cost of living.
-const NOT_LIVING_COSTS = ['Own accounts', 'Refund'];
+const NOT_LIVING_COSTS = ['My other banks', 'Money back'];
 
 // Used until live data arrives. Yearly % from the World Bank.
 const BUILT_IN_INFLATION = {
@@ -38,6 +38,6 @@ const BUILT_IN_INFLATION = {
 
 // The last entry of each list is the fallback for anything uncertain.
 const CATEGORIES = {
-  expense: ['Food', 'Rent', 'Transport', 'Bills', 'Phone', 'Shopping', 'Health', 'Learning', 'Entertainment', 'Software', 'Family', 'Own accounts', 'Refund', 'Cash', 'Bank fees', 'Other'],
-  income: ['Job', 'Family', 'Own accounts', 'Refund', 'Investments', 'Bank profit', 'Other'],
+  expense: ['Food', 'Rent', 'Transport', 'Bills', 'Phone', 'Shopping', 'Health', 'Learning', 'Fun', 'Apps', 'Family', 'My other banks', 'Money back', 'Cash', 'Bank fees', 'Other'],
+  income: ['Job', 'Family', 'My other banks', 'Money back', 'Investing', 'Bank profit', 'Other'],
 };

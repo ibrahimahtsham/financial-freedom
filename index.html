@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Financial Freedom</title>
-<meta name="description" content="Track your income and spending, and see how much you need invested to stop depending on a salary.">
+<meta name="description" content="See where your money goes, and how much you need so you never have to work for money again.">
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Figtree:wght@400;500;600&display=swap">
@@ -17,17 +17,17 @@
 <div class="welcome" id="welcome" hidden>
   <div>
     <h1>How much is enough?</h1>
-    <p class="lede">Answer four questions to see how much you need invested to stop depending on a salary, and when you could get there.</p>
+    <p class="lede">Answer four quick questions to see how much money you need so you don't have to work, and when you could get there.</p>
   </div>
   <form id="wForm" class="panel stack" autocomplete="off" novalidate>
-    <div class="pick"><label for="wCcy">Your currency</label><select id="wCcy"></select></div>
-    <div class="pick"><label for="wSpend">What you spend in a month</label><input class="textin" id="wSpend" type="text" inputmode="decimal"></div>
-    <div class="pick"><label for="wCur">What you have saved so far</label><input class="textin" id="wCur" type="text" inputmode="decimal"></div>
-    <div class="pick"><label for="wIncome">What you earn in a month</label><input class="textin" id="wIncome" type="text" inputmode="decimal"><p class="hint">Between jobs? Put 0.</p></div>
+    <div class="pick"><label for="wCcy">Your type of money</label><select id="wCcy"></select></div>
+    <div class="pick"><label for="wSpend">How much you spend in a month</label><input class="textin" id="wSpend" type="text" inputmode="decimal"></div>
+    <div class="pick"><label for="wCur">How much you have saved</label><input class="textin" id="wCur" type="text" inputmode="decimal"></div>
+    <div class="pick"><label for="wIncome">How much you get paid in a month</label><input class="textin" id="wIncome" type="text" inputmode="decimal"><p class="hint">No job right now? Put 0.</p></div>
     <p class="err" id="wErr" role="alert" hidden></p>
-    <button type="submit" class="primary">Show my number</button>
+    <button type="submit" class="primary">Show me</button>
   </form>
-  <p class="hint">Your numbers stay in this browser. Already have a plan file? <button type="button" class="link" id="wImport">Load my plan</button></p>
+  <p class="hint">Your numbers stay on this computer. Saved a plan before? <button type="button" class="link" id="wImport">Open it</button></p>
 </div>
 
 <div id="app" hidden>
@@ -39,20 +39,20 @@
         <button type="button" role="tab" id="tab-freedom" data-tab="freedom" aria-controls="view-freedom">Freedom</button>
       </nav>
       <div class="controls">
-        <div class="seg mini" id="realWrap" role="radiogroup" aria-label="Show amounts as paid or in today's prices">
-          <label title="The amounts you actually paid"><input type="radio" name="priceView" value="paid" checked><span>As paid</span></label>
-          <label title="Old amounts raised for inflation, to show what they'd cost now"><input type="radio" name="priceView" value="today"><span>Today's prices</span></label>
+        <div class="seg mini" id="realWrap" role="radiogroup" aria-label="Show what you paid or today's prices">
+          <label title="The amounts you really paid back then"><input type="radio" name="priceView" value="paid" checked><span>What I paid</span></label>
+          <label title="Prices go up over time. This shows what old spending would cost now"><input type="radio" name="priceView" value="today"><span>Today's prices</span></label>
         </div>
-        <select id="ccy" aria-label="Show everything in this currency"></select>
+        <select id="ccy" aria-label="Show everything in this type of money"></select>
         <button type="button" class="primary" id="addOpen">Add</button>
         <details class="menu" id="menu">
           <summary aria-label="Menu">Menu</summary>
           <div class="menu-box stack" id="menuBox">
             <button type="button" id="exportBtn">Save my plan</button>
-            <button type="button" id="importBtn">Load a plan</button>
+            <button type="button" id="importBtn">Open a saved plan</button>
             <button type="button" id="tourBtn">Show tutorial</button>
             <button type="button" id="reset">Start over</button>
-            <p class="hint" id="menuNote" role="status">Your numbers stay in this browser. Save a copy so clearing it can't lose them.</p>
+            <p class="hint" id="menuNote" role="status">Your numbers stay in this web browser. Save a copy so you can't lose them.</p>
             <p class="hint" id="rateNote" role="status"></p>
             <button type="button" class="link" id="retry" hidden>Try again</button>
           </div>
@@ -68,8 +68,8 @@
       <div class="range-track" id="rangeTrack">
         <svg id="rangeBars" preserveAspectRatio="none" aria-hidden="true"></svg>
         <div class="range-sel" id="rangeSel"></div>
-        <div class="range-handle" id="rangeA" role="slider" tabindex="0" aria-label="Start of the time range" aria-valuemin="0"></div>
-        <div class="range-handle" id="rangeB" role="slider" tabindex="0" aria-label="End of the time range" aria-valuemin="0"></div>
+        <div class="range-handle" id="rangeA" role="slider" tabindex="0" aria-label="First month to show" aria-valuemin="0"></div>
+        <div class="range-handle" id="rangeB" role="slider" tabindex="0" aria-label="Last month to show" aria-valuemin="0"></div>
       </div>
       <div class="range-ticks" id="rangeTicks"></div>
     </div>
@@ -79,7 +79,7 @@
     <section class="view" id="view-money" role="tabpanel" aria-labelledby="tab-money">
       <div class="panel" id="moneyEmpty">
         <h2>Start tracking</h2>
-        <p class="note">Press Add to enter your first income or expense, and this page will fill up from there.</p>
+        <p class="note">Press Add to write down money you got or spent. This page fills up from there.</p>
       </div>
 
       <div class="grid" id="moneyFull">
@@ -102,8 +102,8 @@
         </section>
 
         <section class="panel c5">
-          <h2>Balance over time</h2>
-          <div class="chart-wrap"><svg id="balance" class="chart" role="img" aria-label="Area chart of your balance at the end of each month"></svg></div>
+          <h2>How much you had</h2>
+          <div class="chart-wrap"><svg id="balance" class="chart" role="img" aria-label="Chart of how much money you had at the end of each month"></svg></div>
           <p class="note" id="viewNote"></p>
         </section>
 
@@ -116,7 +116,7 @@
           <ul class="cats" id="catIn"></ul>
         </section>
         <section class="panel c4">
-          <h2>What stands out</h2>
+          <h2>Things we noticed</h2>
           <ul class="insights" id="insights"></ul>
         </section>
 
@@ -126,20 +126,20 @@
           <div class="legend scale"><span>Less</span><i class="day-key l1"></i><i class="day-key l2"></i><i class="day-key l3"></i><i class="day-key l4"></i><span>More</span><span class="hint">Click a day to see it below.</span></div>
         </section>
         <section class="panel c4">
-          <h2>Biggest expenses</h2>
+          <h2>Biggest spends</h2>
           <ol class="steps levers" id="topList"></ol>
         </section>
 
         <section class="panel c12" id="txSec">
           <div class="panel-head">
-            <div><h2>Transactions</h2><p class="hint" id="txCount"></p></div>
-            <button type="button" id="txCsv">Export CSV</button>
+            <div><h2>Your money list</h2><p class="hint" id="txCount"></p></div>
+            <button type="button" id="txCsv">Download this list</button>
           </div>
           <div class="txbar">
-            <input class="textin" id="txSearch" type="search" placeholder="Search" aria-label="Search transactions">
+            <input class="textin" id="txSearch" type="search" placeholder="Search" aria-label="Search your money list">
             <select id="txType" aria-label="Money in or out"><option value="">In and out</option><option value="income">Money in</option><option value="expense">Money out</option></select>
-            <select id="txCatFilter" aria-label="Filter by category"></select>
-            <select id="txAcct" aria-label="Filter by account"></select>
+            <select id="txCatFilter" aria-label="Show only one type"></select>
+            <select id="txAcct" aria-label="Show only one bank"></select>
             <button type="button" id="txDay" hidden></button>
           </div>
           <div class="table-wrap">
@@ -163,7 +163,7 @@
           <div id="hero">
             <h1 id="headline"></h1>
             <p class="lede" id="lede"></p>
-            <details class="how bare"><summary>How this is worked out</summary><div id="numHow"></div></details>
+            <details class="how bare"><summary>See how we worked this out</summary><div id="numHow"></div></details>
           </div>
           <div>
             <svg class="ridge" viewBox="0 0 800 130" aria-hidden="true">
@@ -178,24 +178,24 @@
           </div>
         </header>
 
-        <div class="tile c4" id="tileDate"><h3>Your date</h3><div class="v" id="dateV"></div><p class="d" id="dateD"></p><details class="how"><summary>How this is worked out</summary><div id="dateHow"></div></details></div>
-        <div class="tile c4" id="tileRun"><h3>Your savings last</h3><div class="v" id="runV"></div><p class="d" id="runD"></p><details class="how"><summary>How this is worked out</summary><div id="runHow"></div></details></div>
-        <div class="tile c4" id="tilePot"><h3>Your savings could pay you</h3><div class="v" id="potV"></div><p class="d" id="potD"></p><details class="how"><summary>How this is worked out</summary><div id="potHow"></div></details></div>
+        <div class="tile c4" id="tileDate"><h3>When you could get there</h3><div class="v" id="dateV"></div><p class="d" id="dateD"></p><details class="how"><summary>See how we worked this out</summary><div id="dateHow"></div></details></div>
+        <div class="tile c4" id="tileRun"><h3>Your savings last</h3><div class="v" id="runV"></div><p class="d" id="runD"></p><details class="how"><summary>See how we worked this out</summary><div id="runHow"></div></details></div>
+        <div class="tile c4" id="tilePot"><h3>Your savings could pay you</h3><div class="v" id="potV"></div><p class="d" id="potD"></p><details class="how"><summary>See how we worked this out</summary><div id="potHow"></div></details></div>
 
         <div class="panel c4 stack" id="inputs">
           <h2>Your numbers</h2>
           <div class="pick"><label for="fCur">Savings so far</label><span class="num"><span class="unit uMine"></span><input type="text" id="fCur" inputmode="decimal"></span><p class="hint" id="curHint"></p><button type="button" class="link start" id="curAuto" hidden></button></div>
           <div class="pick"><label for="fSave">Saving each month</label><span class="num"><span class="unit uMine"></span><input type="text" id="fSave" inputmode="decimal"></span><p class="hint" id="saveHint"></p></div>
-          <div class="pick"><label for="fLive">Want to live on each month</label><span class="num"><span class="unit uMine"></span><input type="text" id="fLive" inputmode="decimal"></span><p class="hint" id="liveHint"></p><button type="button" class="link start" id="liveAuto" hidden></button></div>
-          <div class="pick"><label for="fRet">Yearly return after inflation</label><div class="row"><input type="range" id="fRetR" aria-label="Yearly return after inflation" min="0" max="10" step="0.5"><span class="num"><input class="short" type="text" id="fRet" inputmode="decimal"><span class="unit">%</span></span></div><div class="chips" id="retChips">
+          <div class="pick"><label for="fLive">What you want to spend each month</label><span class="num"><span class="unit uMine"></span><input type="text" id="fLive" inputmode="decimal"></span><p class="hint" id="liveHint"></p><button type="button" class="link start" id="liveAuto" hidden></button></div>
+          <div class="pick"><label for="fRet">How much your money grows each year</label><div class="row"><input type="range" id="fRetR" aria-label="How much your money grows each year" min="0" max="10" step="0.5"><span class="num"><input class="short" type="text" id="fRet" inputmode="decimal"><span class="unit">%</span></span></div><div class="chips" id="retChips">
             <button type="button" data-ret="0">Bank account 0%</button>
-            <button type="button" data-ret="3">Cautious mix 3%</button>
-            <button type="button" data-ret="5">Mostly shares 5%</button>
+            <button type="button" data-ret="3">Slow and safer 3%</button>
+            <button type="button" data-ret="5">Faster but bumpy 5%</button>
           </div>
           <details class="how bare"><summary>What does this mean?</summary><div>
-            <p><strong>Your money grows by being invested.</strong> That usually means funds that own shares in many companies, so it grows as those companies do. This is not interest from your bank.</p>
-            <p><strong>After inflation</strong> means after taking off rising prices. If your investments grow 8% in a year and prices rise 3%, you can really buy about 5% more. All the numbers here use that real growth, so they stay in today's money.</p>
-            <p><strong>These are rough long-term guesses, not promises.</strong> Investments go up and down, and some years they lose money. Money left in a bank account often only keeps up with prices, or falls behind them, so 0% is a fair guess for it.</p>
+            <p><strong>Money can grow.</strong> You can buy small parts of many companies, called shares. When those companies do well, your money grows with them. This is called investing, and it is different from keeping money in a bank.</p>
+            <p><strong>Prices go up too.</strong> So we only count the growth that is left after that. If your money grows 8% in a year and prices go up 3%, you can really buy about 5% more. That is why the numbers here are all in today's prices.</p>
+            <p><strong>These are guesses, not promises.</strong> Shares go up and down, and some years you lose money. Money in a bank often only keeps up with prices, or falls behind them, so 0% is a fair guess for it.</p>
           </div></details></div>
         </div>
 
@@ -208,8 +208,8 @@
               <span><i class="key goal"></i>Goal</span>
             </div>
           </div>
-          <div class="chart-wrap" id="growthBox"><svg id="chart" class="chart" role="img" aria-label="Line chart of your pot growing toward your number, with a band for lower and higher returns"></svg></div>
-          <p class="note">All numbers here are in today's money, so the return is what you earn above inflation. This is a planning tool, not financial advice.</p>
+          <div class="chart-wrap" id="growthBox"><svg id="chart" class="chart" role="img" aria-label="Line chart of your savings growing toward your goal, with a shaded area for slower and faster growth"></svg></div>
+          <p class="note">All these numbers are in today's prices. They are guesses to help you plan, not advice from a money expert.</p>
         </section>
 
         <section class="panel c12">
@@ -224,18 +224,18 @@
 
 <dialog id="addDialog" aria-labelledby="addTitle">
   <form id="addBox" autocomplete="off" novalidate>
-    <h2 id="addTitle">Add to your money</h2>
+    <h2 id="addTitle">Add money in or out</h2>
     <div class="addgrid">
       <div class="seg wide" role="radiogroup" aria-label="Money in or out">
         <label><input type="radio" name="txKind" value="expense" checked><span>Money out</span></label>
         <label><input type="radio" name="txKind" value="income"><span>Money in</span></label>
       </div>
       <div class="pick"><label for="txAmount">Amount</label><input class="textin" id="txAmount" type="text" inputmode="decimal"></div>
-      <div class="pick"><label for="txCcy">Currency</label><select id="txCcy"></select></div>
-      <div class="pick"><label for="txCat">Category</label><select id="txCat"></select></div>
+      <div class="pick"><label for="txCcy">Type of money</label><select id="txCcy"></select></div>
+      <div class="pick"><label for="txCat">What for</label><select id="txCat"></select></div>
       <div class="pick"><label for="txDate">Date</label><input class="textin" id="txDate" type="date"></div>
       <div class="pick"><label for="txNote">Note</label><input class="textin" id="txNote" type="text" maxlength="120"></div>
-      <div class="pick"><label for="txSource">Account</label><input class="textin" id="txSource" type="text" maxlength="20" list="acctList"><datalist id="acctList"></datalist></div>
+      <div class="pick"><label for="txSource">Bank or wallet</label><input class="textin" id="txSource" type="text" maxlength="20" list="acctList"><datalist id="acctList"></datalist></div>
       <p class="hint wide" id="txMsg" role="status"></p>
       <div class="wide actions"><button type="button" id="addCancel">Cancel</button><button type="submit" class="primary" id="addSave">Add it</button></div>
     </div>
@@ -254,7 +254,7 @@
   <h2 id="tourTitle"></h2>
   <p id="tourText"></p>
   <p class="tour-try" id="tourTry" hidden></p>
-  <p class="tour-demo" id="tourDemo" hidden>This is example data. It disappears when the tutorial ends.</p>
+  <p class="tour-demo" id="tourDemo" hidden>These are made-up numbers. They go away when the tutorial ends.</p>
   <div class="acts">
     <button type="button" class="skip" id="tourSkip">Skip</button>
     <button type="button" id="tourBack">Back</button>

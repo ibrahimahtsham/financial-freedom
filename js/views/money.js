@@ -44,10 +44,10 @@ function renderSummary(keys) {
   $('mIn').textContent = money(income);
   $('mOut').textContent = money(spend);
   $('mLeft').textContent = `${left < 0 ? '-' : ''}${money(Math.abs(left))}`;
-  $('mKept').textContent = income > 0 ? `${Math.round((left / income) * 100)}%` : 'No income';
+  $('mKept').textContent = income > 0 ? `${Math.round((left / income) * 100)}%` : 'Nothing came in';
   $('mInD').textContent = `${money(income / n)} a month`;
   $('mOutD').textContent = `${money(spend / n)} a month`;
-  $('mLeftD').textContent = left < 0 ? 'You spent more than came in.' : 'Added to your balance.';
+  $('mLeftD').textContent = left < 0 ? 'You spent more than came in.' : 'This adds to what you have.';
   $('mKeptD').textContent = 'Of what came in.';
   $('mInC').textContent = changeText(income, before.income, label);
   $('mOutC').textContent = changeText(spend, before.spend, label);
@@ -71,7 +71,7 @@ function renderCategories(keys) {
     </button></li>`;
     $(id).innerHTML = all.length
       ? shown.map(([k, v]) => row(k, v)).join('') + (more > 0 ? `<li><button type="button" class="link more" data-more="${t}">${open ? 'Show less' : `Show ${more} more`}</button></li>` : '')
-      : '<li class="hint">Nothing in this period.</li>';
+      : '<li class="hint">Nothing in these months.</li>';
   };
   list('expense', 'catOut');
   list('income', 'catIn');
@@ -80,7 +80,7 @@ function renderCategories(keys) {
 function renderTop(keys) {
   const set = new Set(keys);
   const top = ledger.filter(x => x.t === 'expense' && set.has(x.d.slice(0, 7))).sort((a, b) => viewUsd(b) - viewUsd(a)).slice(0, 5);
-  $('topList').innerHTML = top.length ? top.map(x => `<li><span class="what">${esc(x.n) || esc(x.k)}<small>${dayName(x.d)}, ${esc(x.k)}</small></span><span class="when">${money(viewUsd(x))}</span></li>`).join('') : '<li class="hint">Nothing in this period.</li>';
+  $('topList').innerHTML = top.length ? top.map(x => `<li><span class="what">${esc(x.n) || esc(x.k)}<small>${dayName(x.d)}, ${esc(x.k)}</small></span><span class="when">${money(viewUsd(x))}</span></li>`).join('') : '<li class="hint">Nothing in these months.</li>';
 }
 
 // Short plain-language findings, built from whatever is in the chosen period.
@@ -90,16 +90,17 @@ function renderInsights(keys, rows) {
   const items = ledger.filter(x => x.t === 'expense' && set.has(x.d.slice(0, 7)));
   const total = items.reduce((a, x) => a + viewUsd(x), 0);
   if (!items.length) {
-    $('insights').innerHTML = '<li class="hint">Nothing in this period.</li>';
+    $('insights').innerHTML = '<li class="hint">Nothing in these months.</li>';
     return;
   }
   const byCat = {};
   for (const x of items) if (x.k !== plainCategory('expense')) byCat[x.k] = (byCat[x.k] || 0) + viewUsd(x);
   const [topCat] = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
-  if (topCat) out.push(`<b>${esc(topCat[0])}</b> was your biggest known cost, at ${Math.round((topCat[1] / total) * 100)}% of spending.`);
+  const skipped = items.some(x => x.k === plainCategory('expense')) ? `Not counting ${plainCategory('expense')}, you` : 'You';
+  if (topCat) out.push(`${skipped} spent the most on <b>${esc(topCat[0])}</b>. That is ${Math.round((topCat[1] / total) * 100)}% of all your spending.`);
   if (rows.length > 1) {
     const peak = rows.reduce((a, r) => (r.out > a.out ? r : a), rows[0]);
-    out.push(`You spent the most in <b>${monthName(peak.k)}</b>: ${state.ccy} ${fmt(peak.out)}.`);
+    out.push(`Your biggest month was <b>${monthName(peak.k)}</b>: ${state.ccy} ${fmt(peak.out)}.`);
   }
   const perDay = {};
   for (const x of items) perDay[x.d] = (perDay[x.d] || 0) + viewUsd(x);
@@ -185,10 +186,10 @@ function renderNotice() {
   const missing = used.filter(c => !inflationCovers(c));
   const parts = [];
   if (state.real) {
-    parts.push(`Old amounts are raised to today's prices using each currency's own yearly inflation, up to ${latestInflationYear()}, then converted.`);
-    if (missing.length) parts.push(`No inflation data for ${missing.join(', ')}, so those stay as they were.`);
+    parts.push(`Prices go up over time, so old amounts are made bigger to match today's prices. We know prices up to ${latestInflationYear()}.`);
+    if (missing.length) parts.push(`We don't know the prices for ${missing.join(', ')}, so those stay the same.`);
   }
-  if (used.some(c => c !== state.ccy)) parts.push("Other currencies are converted at today's exchange rate.");
+  if (used.some(c => c !== state.ccy)) parts.push("Other types of money are changed using today's prices for changing money.");
   $('viewNote').textContent = parts.join(' ');
 }
 
@@ -212,7 +213,7 @@ function showDay(d) {
   txPage = 0;
   renderMoney();
   if (tourAt < 0) $('txSec').scrollIntoView({ block: 'start' });
-  else showToast(`The table now shows ${dayName(d)}.`);
+  else showToast(`Your money list now shows ${dayName(d)}.`);
 }
 
 function renderMoney() {
@@ -233,7 +234,7 @@ function renderMoney() {
   const rows = keys.map(k => ({ k, in: months[k]?.in || 0, out: months[k]?.out || 0 }));
   const oneMonth = keys.length === 1;
   $('inOutTitle').textContent = oneMonth ? 'Day by day' : 'Month by month';
-  $('inOutHint').textContent = oneMonth ? 'Click a day to see it in the table.' : 'Click a month to zoom in on it.';
+  $('inOutHint').textContent = oneMonth ? 'Click a day to see it in your money list.' : 'Click a month to see its days.';
   renderSummary(keys);
   renderCategories(keys);
   renderTop(keys);

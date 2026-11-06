@@ -1,6 +1,6 @@
 # Financial Freedom
 
-Track your income and spending, and see how much you need invested to stop depending on a salary. It runs entirely in your browser, with no build step and no account.
+See where your money goes, and how much you need so you never have to work for money again. It runs entirely in your browser, with no build step and no account.
 
 ## Use it
 
@@ -9,7 +9,7 @@ Double-click `index.html`. Your numbers stay in that browser, so use **Menu > Sa
 ## How it works
 
 - **Money:** what came in, what went out, and where it went, in any currency and optionally in today's prices.
-- **Freedom:** your number, your date and how long your savings last, each with its formula.
+- **Freedom:** your goal, when you could reach it and how long your savings last, each with its sum.
 
 Each transaction keeps its own currency. Totals convert at today's rate, and today's prices apply each currency's own yearly inflation first.
 
