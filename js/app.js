@@ -181,7 +181,7 @@ function initTopBar() {
     state.real = i.value === 'today';
     refreshAll();
   }));
-  document.addEventListener('click', e => { if (!$('menu').contains(e.target)) $('menu').open = false; });
+  document.addEventListener('click', e => { if (tourAt < 0 && !$('menu').contains(e.target)) $('menu').open = false; });
   $('retry').addEventListener('click', fetchData);
   $('exportBtn').addEventListener('click', exportPlan);
   $('importBtn').addEventListener('click', () => $('planFile').click());

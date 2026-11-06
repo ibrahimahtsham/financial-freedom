@@ -183,14 +183,23 @@ dialog h2 { margin-bottom: 14px; }
 
 /* Tutorial */
 #tourShade { position: fixed; inset: 0; z-index: 20; }
-#tourSpot { position: fixed; z-index: 21; border-radius: 10px; box-shadow: 0 0 0 200vmax rgba(8, 18, 15, 0.62); pointer-events: none; }
-#tourCard { position: fixed; z-index: 22; width: min(340px, calc(100vw - 32px)); background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+#tourSpot { position: fixed; z-index: 21; border-radius: 10px; box-shadow: 0 0 0 200vmax rgba(8, 18, 15, 0.66); pointer-events: none; transition: left 0.25s ease, top 0.25s ease, width 0.25s ease, height 0.25s ease; }
+#tourSpot.live { outline: 2px solid var(--accent); }
+#tourCard { position: fixed; z-index: 22; width: min(370px, calc(100vw - 32px)); background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; transition: left 0.25s ease, top 0.25s ease; }
 #tourCard h2 { font-size: 22px; margin: 0 0 4px; }
-#tourCard p { margin: 0; }
-#tourCard .count { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+#tourCard p { margin: 0; font-size: 14.5px; }
+.tour-progress { height: 4px; border-radius: 2px; background: var(--accent-soft); overflow: hidden; margin-bottom: 10px; }
+.tour-progress i { display: block; height: 100%; background: var(--accent); transition: width 0.25s ease; }
+#tourCard .count { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+#tourCard .tour-try { margin-top: 10px; padding: 8px 10px; border-radius: 6px; background: var(--accent-soft); font-weight: 500; }
+#tourCard .tour-demo { margin-top: 10px; font-size: 12.5px; color: var(--muted); }
 #tourCard .acts { display: flex; gap: 8px; margin-top: 14px; align-items: center; }
 #tourCard .acts .skip { margin-right: auto; border: 0; padding: 5px 0; color: var(--muted); }
 #tourNext { background: var(--accent); border-color: var(--accent); color: var(--surface); font-weight: 500; }
+
+@media (prefers-reduced-motion: reduce) {
+  #tourSpot, #tourCard, .tour-progress i { transition: none; }
+}
 
 @media (max-width: 720px) {
   .cat { grid-template-columns: 84px 1fr 112px; }

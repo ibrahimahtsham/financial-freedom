@@ -31,7 +31,7 @@
 </div>
 
 <div id="app" hidden>
-  <div class="sticky">
+  <div class="sticky" id="stickyBar">
     <div class="topbar" id="topbar">
       <div class="brand"><img src="assets/favicon.svg" alt="" width="22" height="22"><span>Financial Freedom</span></div>
       <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
@@ -83,10 +83,10 @@
       </div>
 
       <div class="grid" id="moneyFull">
-        <div class="tile c3"><h3>Money in</h3><div class="v" id="mIn"></div><p class="d" id="mInD"></p><p class="change" id="mInC"></p></div>
+        <div class="tile c3" id="tileIn"><h3>Money in</h3><div class="v" id="mIn"></div><p class="d" id="mInD"></p><p class="change" id="mInC"></p></div>
         <div class="tile c3"><h3>Money out</h3><div class="v" id="mOut"></div><p class="d" id="mOutD"></p><p class="change" id="mOutC"></p></div>
         <div class="tile c3"><h3>Left over</h3><div class="v" id="mLeft"></div><p class="d" id="mLeftD"></p></div>
-        <div class="tile c3"><h3>You kept</h3><div class="v" id="mKept"></div><p class="d" id="mKeptD"></p></div>
+        <div class="tile c3" id="tileKept"><h3>You kept</h3><div class="v" id="mKept"></div><p class="d" id="mKeptD"></p></div>
 
         <section class="panel c7">
           <div class="panel-head">
@@ -248,9 +248,12 @@
 <div id="tourShade" hidden></div>
 <div id="tourSpot" hidden></div>
 <div id="tourCard" role="dialog" aria-modal="true" aria-labelledby="tourTitle" hidden>
-  <div class="count" id="tourCount"></div>
+  <div class="tour-progress"><i id="tourBar"></i></div>
+  <div class="count"><span id="tourSection"></span><span id="tourCount"></span></div>
   <h2 id="tourTitle"></h2>
   <p id="tourText"></p>
+  <p class="tour-try" id="tourTry" hidden></p>
+  <p class="tour-demo" id="tourDemo" hidden>This is example data. It disappears when the tutorial ends.</p>
   <div class="acts">
     <button type="button" class="skip" id="tourSkip">Skip</button>
     <button type="button" id="tourBack">Back</button>

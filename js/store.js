@@ -52,7 +52,9 @@ let state = cleanState(readStored(KEY, null));
 let ledger = cleanLedger(readStored(TX_KEY, []));
 
 const saveState = () => writeStored(KEY, state);
-const saveLedger = () => writeStored(TX_KEY, ledger.map(({ id, ...x }) => x));
+const saveLedger = () => {
+  if (!tourDemo) writeStored(TX_KEY, ledger.map(({ id, ...x }) => x));   // example data is never saved
+};
 
 function planFile() {
   const { started, ...plan } = state;
