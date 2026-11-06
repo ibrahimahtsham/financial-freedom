@@ -51,11 +51,8 @@ function renderSummary(rows) {
 
 function renderCategories(keys) {
   const sums = { expense: {}, income: {} };
-  const moved = { in: 0, out: 0 };
   for (const x of ledger) {
-    if (!keys.has(x.d.slice(0, 7))) continue;
-    if (x.t === 'transfer') moved[x.io] += viewUsd(x);
-    else sums[x.t][x.k] = (sums[x.t][x.k] || 0) + viewUsd(x);
+    if (keys.has(x.d.slice(0, 7))) sums[x.t][x.k] = (sums[x.t][x.k] || 0) + viewUsd(x);
   }
   const list = (t, id) => {
     const rows = Object.entries(sums[t]).sort((a, b) => b[1] - a[1]);
@@ -69,9 +66,6 @@ function renderCategories(keys) {
   };
   list('expense', 'catOut');
   list('income', 'catIn');
-  $('moved').textContent = moved.in + moved.out > 0
-    ? `Not counted above: ${money(moved.in)} in and ${money(moved.out)} out as transfers, like family, your own accounts and refunds.`
-    : '';
 }
 
 function renderTop(keys) {
@@ -84,7 +78,7 @@ function balanceRows(keys) {
   for (const x of ledger) {
     const k = x.d.slice(0, 7);
     flows[k] = flows[k] || {};
-    flows[k][x.c] = (flows[k][x.c] || 0) + (x.io === 'in' ? x.a : -x.a);
+    flows[k][x.c] = (flows[k][x.c] || 0) + (x.t === 'income' ? x.a : -x.a);
   }
   const held = {};
   const rows = [];
@@ -102,20 +96,27 @@ function balanceRows(keys) {
   return rows;
 }
 
+function lastDay(ym) {
+  const d = new Date(+ym.slice(0, 4), +ym.slice(5), 0);
+  return `${ym}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// Follows the period. Long periods get one strip per calendar year.
 function renderCalendar(keys) {
   const today = new Date().toISOString().slice(0, 10);
-  const last = keys[keys.length - 1];
-  const endOfMonth = new Date(+last.slice(0, 4), +last.slice(5), 0);
-  const end = `${last}-${String(endOfMonth.getDate()).padStart(2, '0')}`;
-  const endDate = end > today ? today : end;
-  const from = new Date(`${endDate}T12:00:00`);
-  from.setDate(from.getDate() - 364);
-  const earliest = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, '0')}-${String(from.getDate()).padStart(2, '0')}`;
-  const firstDay = `${keys[0]}-01`;
-  const startDate = firstDay > earliest ? firstDay : earliest;
+  const first = `${keys[0]}-01`;
+  const end = lastDay(keys[keys.length - 1]);
+  const last = end > today ? today : end;
   const days = {};
-  for (const x of ledger) if (x.t === 'expense' && x.d >= startDate && x.d <= endDate) days[x.d] = (days[x.d] || 0) + viewUsd(x);
-  drawCalendar(days, startDate, endDate);
+  for (const x of ledger) if (x.t === 'expense' && x.d >= first && x.d <= last) days[x.d] = (days[x.d] || 0) + viewUsd(x);
+  const strips = [];
+  if (keys.length <= 13) strips.push({ from: first, to: last });
+  else {
+    for (let y = +last.slice(0, 4); y >= +first.slice(0, 4); y--) {
+      strips.push({ label: String(y), from: `${y}-01-01` < first ? first : `${y}-01-01`, to: `${y}-12-31` > last ? last : `${y}-12-31` });
+    }
+  }
+  drawCalendar(days, strips);
 }
 
 function renderNotice() {
@@ -135,7 +136,7 @@ function categoryOptions(x) {
     const list = CATEGORIES[t].includes(x.k) || x.t !== t ? CATEGORIES[t] : [x.k, ...CATEGORIES[t]];
     return `<optgroup label="${label}">${list.map(k => `<option value="${t}|${esc(k)}"${x.t === t && x.k === k ? ' selected' : ''}>${esc(k)}</option>`).join('')}</optgroup>`;
   };
-  return group('expense', 'Spending') + group('income', 'Income') + group('transfer', 'Transfer');
+  return group('expense', 'Money out') + group('income', 'Money in');
 }
 
 function renderTransactions() {
@@ -150,13 +151,13 @@ function renderTransactions() {
   $('txClear').hidden = !catFilter;
   $('txClear').textContent = catFilter ? `Showing ${catFilter.k}. Clear` : '';
   $('txList').innerHTML = rows.slice(0, txShown).map(x => {
-    const sign = x.t === 'transfer' ? '' : x.io === 'in' ? '+' : '-';
+    const sign = x.t === 'income' ? '+' : '-';
     const original = `${esc(x.c)} ${x.a.toLocaleString('en-US')}`;
     const converted = x.c !== state.ccy || state.real ? `<small>${money(viewUsd(x))}</small>` : '';
     return `<li class="tx" data-id="${x.id}">
       <span class="tx-what">${esc(x.n) || esc(x.k)}<small>${dayName(x.d)}${x.s ? `, ${esc(x.s)}` : ''}</small></span>
       <select aria-label="Category" data-f="cat">${categoryOptions(x)}</select>
-      <span class="tx-amt ${x.io === 'in' && x.t === 'income' ? 'pos' : ''}">${sign}${original}${converted}</span>
+      <span class="tx-amt ${x.t === 'income' ? 'pos' : ''}">${sign}${original}${converted}</span>
       <button type="button" class="x" aria-label="Delete this transaction">Delete</button>
     </li>`;
   }).join('') || '<li class="hint">No transactions match.</li>';
@@ -173,14 +174,14 @@ function renderMoney() {
   const has = ledger.length > 0;
   $('moneyEmpty').hidden = has;
   $('moneyFull').hidden = !has;
-  if (!has) { $('addBox').hidden = false; return; }
+  if (!has) return;
   periodOptions();
   const list = periodMonths();
   const keys = new Set(list);
   const months = {};
   for (const x of ledger) {
     const k = x.d.slice(0, 7);
-    if (!keys.has(k) || x.t === 'transfer') continue;
+    if (!keys.has(k)) continue;
     months[k] = months[k] || { in: 0, out: 0 };
     months[k][x.t === 'income' ? 'in' : 'out'] += viewUsd(x) * unit();
   }
@@ -197,10 +198,14 @@ function renderMoney() {
 
 function initMoney() {
   $('period').addEventListener('change', () => { txShown = 40; renderMoney(); });
+  const dialog = $('addDialog');
   $('addOpen').addEventListener('click', () => {
-    $('addBox').hidden = !$('addBox').hidden;
-    if (!$('addBox').hidden) $('txAmount').focus();
+    $('txMsg').textContent = '';
+    dialog.showModal();
+    $('txAmount').focus();
   });
+  $('addCancel').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
   document.querySelectorAll('input[name=txKind]').forEach(i => i.addEventListener('change', fillAddCategories));
 
   $('addBox').addEventListener('submit', e => {
@@ -209,13 +214,12 @@ function initMoney() {
     const d = $('txDate').value;
     if (!(a > 0) || !d) { $('txMsg').textContent = 'Enter a date and an amount.'; return; }
     const t = document.querySelector('input[name=txKind]:checked').value;
-    ledger.push({ id: ledger.reduce((m, i) => Math.max(m, i.id), 0) + 1, d, a, c: $('txCcy').value, t, k: $('txCat').value, io: t === 'income' ? 'in' : 'out', n: $('txNote').value.trim().slice(0, 120), s: '' });
+    ledger.push({ id: ledger.reduce((m, i) => Math.max(m, i.id), 0) + 1, d, a, c: $('txCcy').value, t, k: $('txCat').value, n: $('txNote').value.trim().slice(0, 120), s: '' });
     saveLedger();
     refreshAll();
     $('txAmount').value = '';
     $('txNote').value = '';
-    $('txMsg').textContent = 'Added.';
-    $('txAmount').focus();
+    dialog.close();
   });
 
   $('txSearch').addEventListener('input', () => { txShown = 40; renderTransactions(); });
@@ -241,8 +245,6 @@ function initMoney() {
     const [t, ...k] = e.target.value.split('|');
     x.t = t;
     x.k = k.join('|');
-    if (t === 'income') x.io = 'in';
-    if (t === 'expense') x.io = 'out';
     saveLedger();
     refreshAll();
   });

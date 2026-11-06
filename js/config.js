@@ -1,6 +1,6 @@
 // Constants shared across the app.
 const APP_ID = 'financial-freedom';
-const FILE_VERSION = 5;
+const FILE_VERSION = 6;
 const KEY = 'financial-freedom-v3';
 const TX_KEY = `${KEY}-history`;
 const RATE_KEY = `${KEY}-rates`;
@@ -32,9 +32,8 @@ const BUILT_IN_INFLATION = {
   SAU: { 2022: 2.54, 2023: 2.47, 2024: 1.5, 2025: 2.04 },
 };
 
-// The last entry of each list is the plain fallback for anything uncertain.
+// The last entry of each list is the fallback for anything uncertain.
 const CATEGORIES = {
-  expense: ['Food', 'Rent', 'Transport', 'Bills', 'Phone', 'Shopping', 'Health', 'Learning', 'Entertainment', 'Software', 'Family', 'Cash', 'Bank fees', 'Expense'],
-  income: ['Job', 'Job or family', 'Family', 'Investments', 'Bank profit', 'Income'],
-  transfer: ['Family', 'Own accounts', 'Refund or reversal', 'Transfer'],
+  expense: ['Food', 'Rent', 'Transport', 'Bills', 'Phone', 'Shopping', 'Health', 'Learning', 'Entertainment', 'Software', 'Family', 'Own accounts', 'Refund', 'Cash', 'Bank fees', 'Other'],
+  income: ['Job', 'Job or family', 'Family', 'Own accounts', 'Refund', 'Investments', 'Bank profit', 'Other'],
 };

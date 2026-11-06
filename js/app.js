@@ -32,10 +32,16 @@ function refreshAll() {
   if (!state.started) return;
   $('ccy').value = state.ccy;
   $('real').checked = state.real;
-  $('realWrap').hidden = activeTab !== 'money' || !ledger.length;
+  moneyControls();
   renderRateNote();
   renderFreedom();
   renderMoney();
+}
+
+function moneyControls() {
+  const hide = activeTab !== 'money' || !ledger.length;
+  $('realWrap').hidden = hide;
+  $('period').hidden = hide;
 }
 
 function showTab(name) {
@@ -49,7 +55,7 @@ function showTab(name) {
   }
   writeStored(TAB_KEY, activeTab);
   if (location.hash !== `#${activeTab}`) history.replaceState(null, '', `#${activeTab}`);
-  $('realWrap').hidden = activeTab !== 'money' || !ledger.length;
+  moneyControls();
   if (state.started) (activeTab === 'money' ? renderMoney : renderFreedom)();
 }
 
@@ -156,6 +162,7 @@ function initTopBar() {
     state.real = $('real').checked;
     refreshAll();
   });
+  document.addEventListener('click', e => { if (!$('menu').contains(e.target)) $('menu').open = false; });
   $('retry').addEventListener('click', fetchData);
   $('exportBtn').addEventListener('click', exportPlan);
   $('importBtn').addEventListener('click', () => $('planFile').click());

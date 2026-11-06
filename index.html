@@ -37,6 +37,7 @@
       <button type="button" role="tab" id="tab-freedom" data-tab="freedom" aria-controls="view-freedom">Freedom</button>
     </nav>
     <div class="controls">
+      <select id="period" aria-label="Period for everything on this page"></select>
       <label class="check" id="realWrap"><input type="checkbox" id="real">In today's prices</label>
       <select id="ccy" aria-label="Show everything in this currency"></select>
       <details class="menu" id="menu">
@@ -57,13 +58,12 @@
   <section class="view" id="view-money" role="tabpanel" aria-labelledby="tab-money">
     <div class="head-row">
       <h1 class="page-title">Your money</h1>
-      <div class="row">
-        <select id="period" aria-label="Period"></select>
-        <button type="button" class="primary" id="addOpen">Add</button>
-      </div>
+      <button type="button" class="primary" id="addOpen">Add</button>
     </div>
 
-    <form class="card" id="addBox" autocomplete="off" novalidate hidden>
+    <dialog id="addDialog" aria-labelledby="addTitle">
+    <form id="addBox" autocomplete="off" novalidate>
+      <h2 id="addTitle">Add to your money</h2>
       <div class="addgrid">
         <div class="seg wide" role="radiogroup" aria-label="Money in or out">
           <label><input type="radio" name="txKind" value="expense" checked><span>Money out</span></label>
@@ -74,11 +74,13 @@
         <div class="pick"><label for="txCat">Category</label><select id="txCat"></select></div>
         <div class="pick"><label for="txDate">Date</label><input class="textin" id="txDate" type="date"></div>
         <div class="pick wide"><label for="txNote">Note</label><input class="textin" id="txNote" type="text" maxlength="120"></div>
-        <div class="wide row"><button type="submit" class="primary">Add it</button><span class="hint" id="txMsg" role="status"></span></div>
+        <p class="hint wide" id="txMsg" role="status"></p>
+        <div class="wide actions"><button type="button" id="addCancel">Cancel</button><button type="submit" class="primary">Add it</button></div>
       </div>
     </form>
+    </dialog>
 
-    <p class="note" id="moneyEmpty">Add your first income or expense above, and your summary will build from there.</p>
+    <p class="note" id="moneyEmpty">Press Add to enter your first income or expense, and your summary will build from there.</p>
 
     <div class="stack-lg" id="moneyFull">
       <div class="pair four">
@@ -108,7 +110,6 @@
           <ul class="cats" id="catIn"></ul>
         </div>
       </section>
-      <p class="note" id="moved"></p>
 
       <section class="split">
         <div>
@@ -123,7 +124,7 @@
 
       <section>
         <h2>Spending by day</h2>
-        <div class="chartbox scroll"><svg id="calendar" role="img" aria-label="Calendar showing how much you spent each day"></svg></div>
+        <div class="chartbox scroll"><div class="cal" id="calendar"></div></div>
         <div class="legend scale"><span>Less</span><i class="day-key l1"></i><i class="day-key l2"></i><i class="day-key l3"></i><i class="day-key l4"></i><span>More</span></div>
       </section>
 

@@ -65,37 +65,36 @@ function drawBalance(rows) {
 }
 
 // One square per day, darker for more spending. Levels come from the person's own spread.
-function drawCalendar(days, startDate, endDate) {
-  const box = $('calendar');
+function calendarStrip(days, level, startDate, endDate) {
   const size = 13, gap = 3, step = size + gap, top = 16, left = 2;
   const start = new Date(`${startDate}T12:00:00`);
   start.setDate(start.getDate() - start.getDay());
   const end = new Date(`${endDate}T12:00:00`);
-  const spent = Object.values(days).filter(v => v > 0).sort((a, b) => a - b);
-  const cut = q => spent[Math.floor(spent.length * q)] ?? 0;
-  const cuts = [cut(0.25), cut(0.5), cut(0.75)];
-  const level = v => (v <= 0 ? 0 : 1 + cuts.filter(c => v > c).length);
   let o = '';
   let lastMonth = -1;
   let col = 0;
   for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    const row = d.getDay();
-    if (row === 0 && d > start) col += 1;
+    if (d.getDay() === 0 && d > start) col += 1;
     const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     if (iso < startDate) continue;
-    if (d.getDate() <= 7 && d.getMonth() !== lastMonth) {
+    if (d.getMonth() !== lastMonth) {
       lastMonth = d.getMonth();
       o += `<text x="${left + col * step}" y="10">${d.toLocaleDateString('en-US', { month: 'short' })}</text>`;
     }
     const v = (days[iso] || 0) * unit();
-    o += `<rect class="day l${level(days[iso] || 0)}" x="${left + col * step}" y="${top + row * step}" width="${size}" height="${size}" rx="2" data-tip="${esc(`${dayName(iso)}\n${v > 0 ? `${state.ccy} ${fmt(v)}` : 'No spending'}`)}"/>`;
+    o += `<rect class="day l${level(days[iso] || 0)}" x="${left + col * step}" y="${top + d.getDay() * step}" width="${size}" height="${size}" rx="2" data-tip="${esc(`${dayName(iso)}\n${v > 0 ? `${state.ccy} ${fmt(v)}` : 'No spending'}`)}"/>`;
   }
   const W = left + (col + 1) * step + 24;   // room for a month label on the last column
   const H = top + 7 * step;
-  box.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  box.setAttribute('width', W);
-  box.setAttribute('height', H);
-  box.innerHTML = o;
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Spending for each day from ${startDate} to ${endDate}">${o}</svg>`;
+}
+
+function drawCalendar(days, strips) {
+  const spent = Object.values(days).filter(v => v > 0).sort((a, b) => a - b);
+  const cut = q => spent[Math.floor(spent.length * q)] ?? 0;
+  const cuts = [cut(0.25), cut(0.5), cut(0.75)];
+  const level = v => (v <= 0 ? 0 : 1 + cuts.filter(c => v > c).length);
+  $('calendar').innerHTML = strips.map(s => `<div class="cal-year">${s.label ? `<h3>${s.label}</h3>` : ''}${calendarStrip(days, level, s.from, s.to)}</div>`).join('');
 }
 
 let growthView = null;

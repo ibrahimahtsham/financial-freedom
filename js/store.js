@@ -30,17 +30,18 @@ function cleanState(raw) {
   return s;
 }
 
+const RENAMED_CATEGORIES = { Expense: 'Other', Income: 'Other', Transfer: 'Other', 'Refund or reversal': 'Refund' };
 const plainCategory = type => CATEGORIES[type][CATEGORIES[type].length - 1];
 
 function cleanLedger(list) {
   if (!Array.isArray(list)) return [];
   return list.slice(0, 20000).flatMap(x => {
     if (!x || !/^\d{4}-\d\d-\d\d$/.test(x.d) || !(x.a > 0) || !Number.isFinite(x.a) || !/^[A-Z]{3}$/.test(x.c)) return [];
-    const t = ['income', 'expense', 'transfer'].includes(x.t) ? x.t : 'expense';
+    const t = x.t === 'income' || (x.t === 'transfer' && x.io === 'in') ? 'income' : 'expense';
+    const k = String(x.k || '').slice(0, 30);
     return [{
       d: x.d, a: x.a, c: x.c, t,
-      k: String(x.k || '').slice(0, 30) || plainCategory(t),
-      io: x.io === 'in' || x.io === 'out' ? x.io : (t === 'income' ? 'in' : 'out'),
+      k: RENAMED_CATEGORIES[k] ?? (k || plainCategory(t)),
       n: String(x.n || '').slice(0, 120),
       s: String(x.s || '').slice(0, 20),
     }];

@@ -45,7 +45,7 @@ body {
 }
 .tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
 .controls { display: flex; align-items: center; gap: 12px; padding-bottom: 6px; }
-.controls select { width: 190px; }
+.controls select { width: 170px; }
 
 .view { display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; min-width: 0; }
 .stack-lg { display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; min-width: 0; }
@@ -83,6 +83,6 @@ h3 { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
 .progress { margin: 8px 0 0; font-weight: 500; }
 
 @media (max-width: 640px) {
-  .controls { width: 100%; justify-content: space-between; }
-  .controls select { width: 150px; }
+  .controls { width: 100%; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+  .controls select { width: 140px; }
 }
