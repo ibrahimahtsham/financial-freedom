@@ -2,6 +2,7 @@
 let editingId = null;
 let editReturn = null;   // where to go back to after changing an item
 let pickToRemove = -1;   // the quick pick waiting for a yes or no
+let pickAskedAt = 0;
 
 const todayDate = () => new Date().toISOString().slice(0, 10);
 const chosenKind = () => document.querySelector('input[name=txKind]:checked').value;
@@ -101,7 +102,6 @@ const quickLabel = q => (q.a > 0 ? `${q.n || q.k}, ${exactMoney(q.c, q.a)}` : q.
 
 function renderQuick() {
   $('quickList').innerHTML = state.quick.map((q, i) => (i === pickToRemove
-    // Keep sits where the × was, so a double click can't remove it by accident.
     ? `<span class="quick asking"><span>Remove ${esc(q.n || q.k)}?</span><button type="button" data-yes="${i}">Yes, remove</button><button type="button" data-keep="1">Keep</button></span>`
     : `<span class="quick"><button type="button" data-quick="${i}">${esc(quickLabel(q))}</button><button type="button" class="x" data-drop="${i}" aria-label="Remove ${esc(q.n || q.k)}">×</button></span>`)).join('');
   $('quickHint').textContent = state.quick.length
@@ -274,12 +274,15 @@ function initAdd() {
 
   $('quickList').addEventListener('click', e => {
     const { quick, drop, yes, keep } = e.target.dataset;
+    // Yes can land under the mouse, so the second half of a double click must not count.
+    if (yes && Date.now() - pickAskedAt < 600) return;
     if (yes) {
       state.quick = state.quick.filter((_, i) => i !== +yes);
       saveState();
     }
     if (drop || yes || keep) {
       pickToRemove = drop ? +drop : -1;
+      pickAskedAt = Date.now();
       renderQuick();
     }
     if (quick) usePick(state.quick[+quick]);
