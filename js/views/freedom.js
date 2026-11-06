@@ -59,6 +59,20 @@ function buildFreedom() {
   return { t, cur, live, save, months, goalUsd, peak, hit, points, past, from, to: months / 12, yearNow, real, realHit, spendNow, runway: Engine.runway(cur, spendNow) };
 }
 
+// The years you typed: how much to save, and how much you need to get paid for that.
+function renderOwnYears(f) {
+  const { cur, live, months, spendNow } = f;
+  const y = state.freeIn;
+  const fits = y !== null && y * 12 < months;
+  $('takeUse').hidden = !fits || live <= 0;
+  if (y === null) { $('takeAnswer').textContent = ''; return; }
+  if (!fits) { $('takeAnswer').textContent = state.born ? `That is past age ${LAST_AGE}. Try fewer years.` : 'That is too far away. Try fewer years.'; return; }
+  const need = Engine.savingToStop({ cur, spend: live, months, stop: y * 12 });
+  const year = new Date().getFullYear() + y;
+  $('takeUse').dataset.save = need;
+  $('takeAnswer').innerHTML = `To be free by ${year}${state.born ? `, when you are ${year - state.born}` : ''}, you need to get paid <b>${money(need + spendNow)} a month</b>. That is ${money(need)} to save and ${money(spendNow)} to spend.`;
+}
+
 function renderTake(f) {
   const { cur, live, months, spendNow } = f;
   $('takeNote').textContent = f.save > 0
@@ -154,9 +168,11 @@ function renderFreedom() {
   set('fSave', fmt(save * u));
   set('fLive', fmt(live * u));
   set('fBorn', state.born ?? '');
+  set('takeYears', state.freeIn ?? '');
   document.querySelectorAll('.uMine').forEach(e => { e.textContent = state.ccy; });
 
   renderTake(f);
+  renderOwnYears(f);
   renderTrack(f);
   freedomView = f;
   drawGrowth(f);
@@ -176,6 +192,17 @@ function initFreedom() {
     renderFreedom();
   });
   $('fBorn').addEventListener('blur', renderFreedom);
+  $('takeYears').addEventListener('input', () => {
+    const y = Math.floor(parseNumber($('takeYears').value));
+    state.freeIn = y > 0 ? y : null;
+    saveState();
+    renderFreedom();
+  });
+  $('takeUse').addEventListener('click', () => {
+    state.save = +$('takeUse').dataset.save;
+    saveState();
+    renderFreedom();
+  });
   edit('fCur', n => { state.cur = n / unit(); });
   edit('fSave', n => { state.save = n / unit(); });
   edit('fLive', n => { state.live = n / unit(); });

@@ -19,7 +19,7 @@ const TOUR_STEPS = [
   { section: 'Freedom', tab: 'freedom', els: ['tileDate', 'tileRun', 'tilePot'], t: 'Where you are now', p: 'When you could reach your goal, how long your savings would last if no money came in, and how long you would spend your money for. Each one shows its sum too.' },
   { section: 'Freedom', tab: 'freedom', els: ['inputs'], t: 'Change your plan', p: 'We fill these in from your money list, but you can type over them. If you plan to spend less later, lower what you want to spend.', tryIt: 'Try it: change how much you save and see your date move.' },
   { section: 'Freedom', tab: 'freedom', els: ['chart'], t: 'Your timeline', p: 'What you really had so far, then your plan: your savings go up until you reach your goal, then go down as you spend them. Under it, we tell you if you are on track.' },
-  { section: 'Freedom', tab: 'freedom', els: ['takeTable'], t: 'What it would take', p: 'Pick how soon you want to get there, and see how much to save and how much you need to get paid. If you have no job right now, this gives you a target for your next one.' },
+  { section: 'Freedom', tab: 'freedom', els: ['takeTable'], t: 'What it would take', p: 'Pick how soon you want to get there, or type your own number of years, and see how much to save and how much you need to get paid. If you have no job right now, this gives you a target for your next one.' },
 
   { section: 'Keep it safe', tab: 'freedom', els: ['menu', 'menuBox'], openMenu: true, locked: true, t: 'Save your plan', p: 'Your numbers stay in this web browser and are never sent anywhere. If the browser gets cleared, they are gone, so save your plan to a file now and then. You can watch this tutorial again from here.' },
 ];

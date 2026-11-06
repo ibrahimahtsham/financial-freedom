@@ -205,6 +205,10 @@ button:disabled { opacity: 0.45; cursor: default; }
 .take td, .take th { padding-top: 7px; padding-bottom: 7px; }
 .take th:first-child, .take td:first-child { padding-left: 0; }
 .take .num-col { width: 18%; }
+.take-own { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 12px 0; font-size: 14px; }
+.take-own label { font-weight: 500; }
+.take-own .num { flex: none; }
+.take-own p { margin: 0; flex: 1 1 280px; }
 .pager { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 10px; }
 .pager .hint { margin-right: auto; }
 
