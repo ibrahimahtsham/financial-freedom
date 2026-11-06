@@ -26,6 +26,10 @@ const shortNumber = v => (v >= 1e6
 const monthName = ym => new Date(+ym.slice(0, 4), +ym.slice(5) - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 const dayName = d => new Date(`${d}T12:00:00`).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 const dateIn = months => monthName(Engine.addMonths(thisMonth(), months));
+
+// Birthdays aren't known, only the year, so an age can be a year out.
+const ageIn = months => +Engine.addMonths(thisMonth(), months).slice(0, 4) - state.born;
+const atAge = months => (state.born ? `, when you are ${ageIn(months)}` : '');
 function duration(m) {
   if (m === 0) return 'Now';
   const y = Math.floor(m / 12);

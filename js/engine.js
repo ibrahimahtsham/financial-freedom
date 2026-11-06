@@ -1,7 +1,7 @@
 // Pure maths: no DOM and no app state, so it can be tested on its own.
 // Months are "YYYY-MM" strings.
 const Engine = (() => {
-  const MAX_MONTHS = 720;
+  const MAX_MONTHS = 1200;
   const FREEDOM_MULTIPLE = 25;   // 4% rule: 1 / 0.04
 
   const monthlyRate = yearly => Math.pow(1 + yearly / 100, 1 / 12) - 1;
