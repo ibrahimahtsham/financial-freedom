@@ -1,0 +1,991 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Financial Freedom</title>
+<meta name="description" content="Work out how much you need invested to stop depending on a salary, and when you get there.">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a6b58'/%3E%3Ccircle cx='22' cy='11' r='4.5' fill='%23f0b37e'/%3E%3Cpath d='M0 25c6-7 10-9 15-5s10-3 17-8v20H0z' fill='%23d3e4dd'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: welcome form on first visit; then hero with ridge progress, short inputs left with folded settings, results right; stacks on phones with a bottom summary bar */
+:root{
+  --bg:#e8efec; --surface:#f8faf9; --fg:#1b2a27; --muted:#526661; --line:#cfdbd6;
+  --accent:#2a6b58; --accent-soft:#d3e4dd; --goal:#a4561d;
+  --ridge1:#c6d8d2; --ridge2:#9dbcb2; --ridge3:#3f7a68; --marker:#a4561d;
+  --display:"Newsreader",Georgia,serif; --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121a18; --surface:#1a2421; --fg:#e4ece9; --muted:#9db0aa; --line:#2e3d38;
+  --accent:#7cc7ad; --accent-soft:#21382f; --goal:#eba46c;
+  --ridge1:#22332e; --ridge2:#2d4a41; --ridge3:#4a8571; --marker:#eba46c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121a18; --surface:#1a2421; --fg:#e4ece9; --muted:#9db0aa; --line:#2e3d38;
+  --accent:#7cc7ad; --accent-soft:#21382f; --goal:#eba46c;
+  --ridge1:#22332e; --ridge2:#2d4a41; --ridge3:#4a8571; --marker:#eba46c; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;font-variant-numeric:tabular-nums}
+.page{max-width:1120px;margin:0 auto;padding:32px max(16px,env(safe-area-inset-right,0px)) 64px max(16px,env(safe-area-inset-left,0px))}
+
+/* welcome */
+.welcome{max-width:520px;margin:6vh auto 0;display:grid;gap:20px}
+.welcome .ridge{margin:0}
+.welcome form{display:grid;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px}
+.wfield{display:grid;gap:4px}
+.wfield label{font-weight:500;font-size:14px}
+.wfield input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;width:100%}
+.wfield input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.primary{background:var(--accent);border-color:var(--accent);color:var(--surface);font-weight:500;padding:9px 14px}
+.err{color:var(--goal);font-size:13.5px;margin:0;font-weight:500}
+
+/* hero */
+h1{font-family:var(--display);font-weight:500;font-size:clamp(30px,5vw,50px);line-height:1.08;margin:0;max-width:20em;text-wrap:balance;letter-spacing:-.01em}
+.lede{font-size:17px;margin:12px 0 0;max-width:62ch;color:var(--muted)}
+.ridge{display:block;width:100%;height:auto;margin-top:12px}
+.ridge .r1{fill:var(--ridge1)} .ridge .r2{fill:var(--ridge2)} .ridge .r3{fill:var(--ridge3)}
+.ridge .home{fill:var(--ridge3)} .ridge .you{fill:var(--marker);stroke:var(--bg);stroke-width:3}
+.progress{margin:8px 0 0;font-weight:500}
+
+/* layout */
+.layout{display:grid;grid-template-columns:minmax(0,350px) minmax(0,1fr);gap:40px;margin-top:32px;align-items:start}
+.panel{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;display:grid;gap:16px}
+.results{display:grid;grid-template-columns:minmax(0,1fr);gap:36px;min-width:0}
+h2{font-family:var(--display);font-weight:500;font-size:25px;line-height:1.2;margin:0 0 12px}
+.group{display:grid;gap:14px}
+
+/* inputs */
+.field{display:grid;gap:4px;min-width:0}
+.field label,.pick label{font-weight:500;font-size:14px}
+.row{display:flex;gap:10px;align-items:center}
+input[type=range]{flex:1;accent-color:var(--accent);min-width:0;margin:0}
+.num{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:6px;background:var(--bg);padding:0 6px;flex:none}
+.num .unit{font-size:12px;color:var(--muted)}
+.num input{width:84px;border:0;background:none;color:var(--fg);font:inherit;font-size:14px;padding:5px 0;text-align:right}
+.num:focus-within{outline:2px solid var(--accent);outline-offset:1px}
+.num input:focus{outline:none}
+input[type=range]:focus-visible,input[type=checkbox]:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible,.seg input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.hint{font-size:12.5px;color:var(--muted);margin:0}
+.pick{display:grid;gap:4px}
+select,.textin{font:inherit;font-size:14px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 8px;width:100%}
+.textin:focus{outline:2px solid var(--accent);outline-offset:1px}
+.rate{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+.link{border:0;padding:0;background:none;color:var(--accent);font-size:13px;font-weight:500;text-decoration:underline;cursor:pointer}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.seg label{cursor:pointer;position:relative}
+.seg input{position:absolute;opacity:0}
+.seg span{display:block;text-align:center;padding:7px 8px;border:1px solid var(--line);border-radius:6px;font-size:14px;font-weight:500}
+.seg input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.costs{display:grid;gap:6px}
+.costs .line{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px}
+.costs .total{font-weight:600;border-top:1px solid var(--line);padding-top:6px}
+.check{display:flex;gap:8px;align-items:center;font-size:14px;cursor:pointer}
+.check input{accent-color:var(--accent);margin:0}
+button{font:inherit;color:inherit;background:none;border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+.tools{display:grid;gap:8px}
+.tools .btns{display:flex;flex-wrap:wrap;gap:8px}
+.tools button{font-size:13px}
+
+/* folds */
+.fold>summary{list-style:none;display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 0}
+.fold>summary::-webkit-details-marker{display:none}
+.fold>summary::after{content:"";flex:none;width:8px;height:8px;margin:0 3px 3px 4px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg)}
+.fold[open]>summary::after{transform:translateY(3px) rotate(-135deg)}
+.fold>summary .name{font-weight:500;flex:1}
+.fold>summary .val{color:var(--muted);font-size:13px}
+.settings .fold{border-top:1px solid var(--line)}
+.settings .fold:last-child{border-bottom:1px solid var(--line)}
+.settings .fold>.group{padding:4px 0 16px}
+.sec{border-top:1px solid var(--line)}
+.sec>summary h2{margin:0;flex:1}
+.sec>.body{padding:4px 0 8px}
+
+/* results */
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.tile.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.tile h3{margin:0 0 6px;font-weight:500;color:var(--muted);font-size:14px}
+.tile .v{font-family:var(--display);font-size:30px;line-height:1.15}
+.tile .d{font-size:13.5px;color:var(--muted);margin:4px 0 0}
+.tile .v.bad{color:var(--goal)}
+.tile .row{margin-top:10px}
+.note{font-size:14px;color:var(--muted);margin:12px 0 0;max-width:68ch}
+
+/* chart */
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--muted);margin-bottom:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.key{width:18px;height:0;border-top:2px solid var(--accent)}
+.key.band{height:10px;border:0;background:var(--accent-soft);border-radius:2px}
+.key.goal{border-top:2px dashed var(--goal)}
+.chartbox{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 8px 4px;touch-action:pan-y}
+#chart{display:block;width:100%}
+#chart text{fill:var(--muted);font-family:var(--body);font-size:12px}
+#chart text.goalt{fill:var(--goal);font-weight:500}
+.tip{position:absolute;top:12px;pointer-events:none;background:var(--fg);color:var(--bg);border-radius:6px;padding:8px 10px;font-size:13px;line-height:1.4;min-width:200px;display:none}
+.tip b{display:block;font-weight:600}
+.tip div{display:flex;justify-content:space-between;gap:14px}
+
+/* milestones */
+.steps{list-style:none;margin:0;padding:0;display:grid}
+.steps li{display:grid;grid-template-columns:96px 1fr;gap:14px;padding:10px 0;border-top:1px solid var(--line)}
+.steps li:first-child{border-top:0}
+.steps .when{font-weight:600}
+.steps .what small{display:block;color:var(--muted);font-size:13px}
+.steps li.done .when{color:var(--accent)}
+.steps.levers li{grid-template-columns:minmax(0,1fr) auto}
+.steps.levers .when{text-align:right}
+
+/* tables */
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{font-weight:500;color:var(--muted);text-align:right;padding:6px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{text-align:right;padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+tr.me td{background:var(--accent-soft);font-weight:600}
+
+/* money history */
+.bars{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 8px 4px;margin-top:12px}
+#bars{display:block;width:100%}
+#bars text{fill:var(--muted);font-family:var(--body);font-size:12px}
+#bars rect.bar{fill:var(--accent)}
+#bars rect.bar:hover{fill:var(--goal)}
+.addform{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
+.addform .wide{grid-column:1/-1}
+.addform .pick input{font:inherit;font-size:14px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 8px;width:100%}
+.txbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.txbar input,.txbar select{width:auto;flex:1;min-width:150px}
+#txTable td{vertical-align:middle}
+#txTable td.memo{white-space:normal;text-align:left;min-width:190px}
+#txTable td.memo small{display:block;color:var(--muted)}
+#txTable th.memo{text-align:left}
+#txTable select{width:auto;padding:3px 4px;font-size:13px}
+.x{border:0;padding:2px 6px;color:var(--muted)}
+
+/* tutorial */
+#tourShade{position:fixed;inset:0;z-index:20}
+#tourSpot{position:fixed;z-index:21;border-radius:10px;box-shadow:0 0 0 200vmax rgba(8,18,15,.62);pointer-events:none}
+#tourCard{position:fixed;z-index:22;width:min(340px,calc(100vw - 32px));background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+#tourCard h2{font-size:22px;margin:0 0 4px}
+#tourCard p{margin:0}
+#tourCard .count{font-size:13px;color:var(--muted);margin-bottom:6px}
+#tourCard .acts{display:flex;gap:8px;margin-top:14px;align-items:center}
+#tourCard .acts .skip{margin-right:auto;border:0;padding:5px 0;color:var(--muted)}
+#tourNext{background:var(--accent);border-color:var(--accent);color:var(--surface);font-weight:500}
+
+.dock{display:none}
+@media (max-width:900px){
+  .layout{grid-template-columns:minmax(0,1fr);gap:32px}
+  .panel{position:static;max-height:none;overflow:visible}
+  .page{padding-bottom:96px}
+  .dock{display:flex;justify-content:space-between;gap:12px;position:fixed;left:0;right:0;bottom:0;background:var(--fg);color:var(--bg);padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));font-weight:500;z-index:5}
+}
+@media (max-width:480px){.steps li{grid-template-columns:80px 1fr}.fold>summary .val{font-size:12.5px}}
+</style>
+</head>
+<body>
+
+<div class="page welcome" id="welcome" hidden>
+  <div>
+    <h1>How much is enough?</h1>
+    <p class="lede">Answer four questions to see how much you need invested to stop depending on a salary, and when you could get there.</p>
+  </div>
+  <form id="wForm" autocomplete="off" novalidate>
+    <div class="wfield"><label for="wCcy">Your currency</label><select id="wCcy"></select></div>
+    <div class="wfield"><label for="wSpend">What you spend in a month</label><input id="wSpend" type="text" inputmode="decimal"></div>
+    <div class="wfield"><label for="wCur">What you have saved so far</label><input id="wCur" type="text" inputmode="decimal"></div>
+    <div class="wfield"><label for="wSave">What you can save each month</label><input id="wSave" type="text" inputmode="decimal"></div>
+    <p class="err" id="wErr" role="alert" hidden></p>
+    <button type="submit" class="primary">Show my number</button>
+  </form>
+  <p class="hint">Your numbers stay in this browser. Already have a plan file? <button type="button" class="link" id="wImport">Load my plan</button></p>
+</div>
+
+<div class="page" id="app" hidden>
+  <header>
+    <div id="hero">
+      <h1 id="headline"></h1>
+      <p class="lede" id="lede"></p>
+    </div>
+    <svg class="ridge" viewBox="0 0 800 130" aria-hidden="true">
+      <path class="r1" d="M0 130V78C60 60 110 74 170 56S290 34 350 50s110 10 170-8 130-22 280 6v82Z"/>
+      <path class="r2" d="M0 130V100c70-14 130 2 200-14s120-26 190-12 120 2 190-16 120-20 220-8v80Z"/>
+      <path class="r3" d="M0 130V118C80 112 130 120 200 104S320 92 390 84s100 6 170-14S680 26 742 22c20 2 40 12 58 24v84Z"/>
+      <path id="crest" fill="none" d="M0 118C80 112 130 120 200 104S320 92 390 84s100 6 170-14S680 26 742 22"/>
+      <rect class="home" x="733" y="4" width="18" height="18" rx="1"/>
+      <circle class="you" id="you" r="8" cx="0" cy="118"/>
+    </svg>
+    <p class="progress" id="progress"></p>
+  </header>
+
+  <div class="layout">
+    <form class="panel" id="form" autocomplete="off" onsubmit="return false">
+      <div class="group" id="basics">
+        <div class="pick">
+          <label for="ccy">My currency</label>
+          <select id="ccy"></select>
+        </div>
+        <div id="basicFields" class="group"></div>
+      </div>
+
+      <div class="settings" id="settings">
+        <details class="fold">
+          <summary><span class="name">My spending</span><span class="val" id="sumSpend"></span></summary>
+          <div class="group">
+            <p class="hint">Split it up to see it clearly, or keep it all under Everything else.</p>
+            <div class="costs" id="costs"></div>
+          </div>
+        </details>
+        <details class="fold">
+          <summary><span class="name">Where I'll live</span><span class="val" id="sumPlan"></span></summary>
+          <div class="group">
+            <div class="seg" role="radiogroup" aria-label="Stay or move">
+              <label><input type="radio" name="move" value="stay"><span>Stay here</span></label>
+              <label><input type="radio" name="move" value="move"><span>Move</span></label>
+            </div>
+            <div class="group" id="moveFields">
+              <div class="pick"><label for="place">Place</label><input class="textin" id="place" type="text" maxlength="60" placeholder="City or country"></div>
+              <div class="pick"><label for="dest">Currency there</label><select id="dest"></select></div>
+              <div class="seg" role="radiogroup" aria-label="Rent or buy">
+                <label><input type="radio" name="home" value="rent"><span>Rent</span></label>
+                <label><input type="radio" name="home" value="buy"><span>Buy</span></label>
+              </div>
+              <div class="costs" id="rentFields"></div>
+              <div class="costs" id="buyFields"></div>
+              <p class="hint">Leave monthly costs at 0 to use what you spend now.</p>
+            </div>
+            <div class="costs" id="sideField"></div>
+            <p class="hint" id="sideH"></p>
+          </div>
+        </details>
+        <details class="fold">
+          <summary><span class="name">Advanced</span></summary>
+          <div class="group">
+            <div id="advFields" class="group"></div>
+            <div id="rateBox" class="group">
+              <p class="hint" id="rateNote" role="status"></p>
+              <button type="button" class="link" id="retry" style="justify-self:start" hidden>Try again</button>
+              <div class="costs" id="fxField"></div>
+              <label class="check"><input type="checkbox" id="fxAuto">Use the live exchange rate</label>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div class="tools" id="tools">
+        <div class="btns">
+          <button type="button" id="exportBtn">Save my plan</button>
+          <button type="button" id="importBtn">Load a plan</button>
+          <button type="button" id="tourBtn">Tutorial</button>
+          <button type="button" id="reset">Start over</button>
+        </div>
+        <p class="hint" id="toolNote" role="status">Your numbers stay in this browser. Save a copy so clearing your browser can't lose them.</p>
+      </div>
+    </form>
+
+    <main class="results">
+      <section id="takes">
+        <h2>What it takes</h2>
+        <div class="pair">
+          <div class="tile">
+            <h3>At your current pace</h3>
+            <div class="v" id="paceV"></div>
+            <p class="d" id="paceD"></p>
+          </div>
+          <div class="tile">
+            <h3 id="goalH"></h3>
+            <div class="v" id="needV"></div>
+            <p class="d" id="needD"></p>
+            <div class="row"><input type="range" id="goalYR" aria-label="Years you would like it to take" min="1" max="40" step="1"></div>
+          </div>
+        </div>
+        <p class="note" id="range"></p>
+      </section>
+
+      <section>
+        <h2>How your pot grows</h2>
+        <div class="legend">
+          <span><i class="key"></i><span id="lgMid"></span></span>
+          <span><i class="key band"></i><span id="lgBand"></span></span>
+          <span><i class="key goal"></i>Goal</span>
+        </div>
+        <div class="chartbox" id="chartbox">
+          <svg id="chart" role="img" aria-label="Line chart of your savings pot growing toward the goal, with a band for lower and higher returns"></svg>
+          <div class="tip" id="tip"></div>
+        </div>
+        <p class="note" id="split"></p>
+      </section>
+
+      <section>
+        <h2>The stops along the way</h2>
+        <ol class="steps" id="steps"></ol>
+      </section>
+
+      <section id="moves">
+        <h2>What moves your date most</h2>
+        <p class="note" id="movesNote" style="margin:0 0 6px"></p>
+        <ul class="steps levers" id="levers"></ul>
+      </section>
+
+      <section id="ledgerSec">
+        <h2>My money</h2>
+        <p class="note" id="ledgerEmpty" style="margin:0 0 10px">Add your income and expenses below, and your plan can use real numbers instead of estimates.</p>
+        <div id="ledgerStats" hidden>
+          <div class="pair">
+            <div class="tile"><h3>You spend each month</h3><div class="v" id="lgSpend"></div><p class="d">Average of the last 6 full months</p></div>
+            <div class="tile"><h3>You bring in each month</h3><div class="v" id="lgIncome"></div><p class="d">Same 6 months, leaving out transfers</p></div>
+          </div>
+          <div class="bars"><svg id="bars" role="img" aria-label="Bar chart of spending in each of the last 24 months"></svg></div>
+          <p class="note" id="lgByCcy"></p>
+          <div class="row" style="margin-top:10px"><button type="button" id="useReal">Use my real spending in the plan</button></div>
+          <p class="hint" id="lgNote" role="status" style="margin-top:6px"></p>
+        </div>
+        <details class="fold sec" style="margin-top:12px">
+          <summary><span class="name">Add income or an expense</span></summary>
+          <form class="body addform" id="txForm" autocomplete="off" novalidate>
+            <div class="pick"><label for="txType">Type</label><select id="txType"><option value="expense">Expense</option><option value="income">Income</option><option value="transfer">Transfer</option></select></div>
+            <div class="pick"><label for="txCat">Category</label><select id="txCat"></select></div>
+            <div class="pick"><label for="txDate">Date</label><input id="txDate" type="date"></div>
+            <div class="pick"><label for="txAmount">Amount</label><input id="txAmount" type="text" inputmode="decimal"></div>
+            <div class="pick"><label for="txCcy">Currency</label><select id="txCcy"></select></div>
+            <div class="pick"><label for="txNote">Note</label><input id="txNote" type="text" maxlength="120"></div>
+            <div class="wide row"><button type="submit" class="primary">Add it</button><span class="hint" id="txMsg" role="status"></span></div>
+          </form>
+        </details>
+        <details class="fold sec" id="txFold">
+          <summary><span class="name">All transactions</span><span class="val" id="txCount"></span></summary>
+          <div class="body">
+            <div class="txbar">
+              <input class="textin" id="txSearch" type="search" placeholder="Search" aria-label="Search transactions">
+              <select id="txFilter" aria-label="Filter transactions">
+                <option value="all">Everything</option><option value="income">Income</option><option value="expense">Expenses</option><option value="transfer">Transfers</option><option value="unsorted">Needs sorting</option>
+              </select>
+            </div>
+            <div class="tablewrap"><table id="txTable"></table></div>
+            <button type="button" id="txMore" style="margin-top:8px" hidden>Show more</button>
+          </div>
+        </details>
+      </section>
+
+      <div id="extras">
+        <details class="fold sec">
+          <summary><h2>Check a pay rise or job offer</h2></summary>
+          <div class="body">
+            <p class="note" style="margin:0 0 10px">See what each income gets you. It takes your spending off the income and saves the rest.</p>
+            <div class="tablewrap"><table id="salaries"></table></div>
+          </div>
+        </details>
+        <details class="fold sec" id="cmpFold">
+          <summary><h2>Compare rent and buy</h2></summary>
+          <div class="body">
+            <div class="pair">
+              <div class="tile" id="cmpRent">
+                <h3>Rent</h3>
+                <div class="v" id="cmpRentV"></div>
+                <p class="d" id="cmpRentD"></p>
+              </div>
+              <div class="tile" id="cmpBuy">
+                <h3>Buy</h3>
+                <div class="v" id="cmpBuyV"></div>
+                <p class="d" id="cmpBuyD"></p>
+              </div>
+            </div>
+            <p class="note" id="cmpNote"></p>
+          </div>
+        </details>
+        <details class="fold sec">
+          <summary><h2>See it year by year</h2></summary>
+          <div class="body"><div class="tablewrap"><table id="yearly"></table></div></div>
+        </details>
+      </div>
+
+      <p class="note">All numbers are in today's money, so the return is what you earn above inflation. If you plan to move, think about which currency your pot is held in, because exchange rates shift over time. This is a planning tool, not financial advice.</p>
+    </main>
+  </div>
+</div>
+
+<div class="dock" id="dock" aria-hidden="true" hidden><span id="dockA"></span><span id="dockB"></span></div>
+<input type="file" id="planFile" accept=".json,application/json" hidden>
+
+<div id="tourShade" hidden></div>
+<div id="tourSpot" hidden></div>
+<div id="tourCard" role="dialog" aria-modal="true" aria-labelledby="tourTitle" hidden>
+  <div class="count" id="tourCount"></div>
+  <h2 id="tourTitle"></h2>
+  <p id="tourText"></p>
+  <div class="acts">
+    <button type="button" class="skip" id="tourSkip">Skip</button>
+    <button type="button" id="tourBack">Back</button>
+    <button type="button" id="tourNext">Next</button>
+  </div>
+</div>
+
+<script>
+// Amounts in MONEY are kept in USD and shown in the chosen currency, so switching never drifts.
+// Amounts in LOCAL are kept in the currency of the place you move to.
+const COSTS={cHome:'Rent or housing',cFood:'Food',cMove:'Transport',cBills:'Phone and bills',cGive:'Family and giving',cMisc:'Everything else'};
+const MONEY=['cur','save','side',...Object.keys(COSTS)];
+const LOCAL={mRent:'Monthly rent',mOther:'Everything else each month',price:'Home price',own:'Monthly costs once you own'};
+const PCT={ret:{label:'Yearly return after inflation',min:0,max:10,step:.5,hint:'5% is a reasonable middle guess'},wr:{label:'Yearly withdrawal from the pot',min:2.5,max:6,step:.25},infl:{label:'Yearly price rise for old spending',min:0,max:20,step:.5,hint:'Used to bring old spending up to today\'s prices. This is a guess, so set your own.'}};
+const POPULAR=['USD','EUR','GBP','SAR','AED','PKR','INR','QAR','KWD','OMR','BHD','CAD','AUD'];
+const LAKH=['PKR','INR','BDT','NPR','LKR'];
+// used only if no rate has ever been fetched; units per 1 USD on 6 Nov 2026
+const BUILT_IN={r:{USD:1,SAR:3.75,PKR:276.7,AED:3.6725,QAR:3.64,KWD:.3103,OMR:.3845,BHD:.376,GBP:.743,EUR:.891},at:Date.UTC(2026,10,6),src:'built-in'};
+const KEY='financial-freedom-v2',RATE_KEY=KEY+'-rates',TOUR_KEY=KEY+'-tour',SPREAD=2,MAX_M=720;
+const $=id=>document.getElementById(id);
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+const parse=t=>parseFloat(String(t).replace(/,/g,''));
+const get=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
+const put=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+
+function defaults(){
+  const s={started:false,ccy:'USD',dest:'USD',move:false,home:'rent',place:'',fxAuto:true,fx:1,goalY:10,ret:5,wr:4,infl:6,cur:0,save:0,side:0,mRent:0,mOther:0,price:0,own:0};
+  for(const k in COSTS)s[k]=0;
+  return s;
+}
+// accepts stored or imported data and keeps only valid values
+function clean(raw){
+  const d=defaults(),s={...d};
+  if(!raw||typeof raw!=='object')return s;
+  for(const k in d){
+    const v=raw[k];
+    if(typeof d[k]==='number'){if(typeof v==='number'&&Number.isFinite(v)&&v>=0)s[k]=v}
+    else if(typeof d[k]==='boolean'){if(typeof v==='boolean')s[k]=v}
+  }
+  if(/^[A-Z]{3}$/.test(raw.ccy))s.ccy=raw.ccy;
+  if(/^[A-Z]{3}$/.test(raw.dest))s.dest=raw.dest;
+  if(raw.home==='buy')s.home='buy';
+  if(typeof raw.place==='string')s.place=raw.place.slice(0,60);
+  s.wr=Math.min(PCT.wr.max,Math.max(PCT.wr.min,s.wr));
+  s.ret=Math.min(20,s.ret);
+  s.goalY=Math.min(40,Math.max(1,Math.round(s.goalY)));
+  return s;
+}
+// income and expenses stay in their own currency; only totals are converted, at today's rate
+const TX_KEY=KEY+'-history';
+const CATS={expense:['Food','Rent','Transport','Bills','Shopping','Health','Family','Cash','Bank fees','Other'],income:['Job','Job or family','Family','Bank profit','Other income'],transfer:['Unsorted','Family or own','Between my accounts']};
+const TO_COST={Food:'cFood',Rent:'cHome',Transport:'cMove',Bills:'cBills',Family:'cGive'};
+function cleanTx(list){
+  if(!Array.isArray(list))return [];
+  return list.slice(0,20000).flatMap(x=>{
+    if(!x||!/^\d{4}-\d\d-\d\d$/.test(x.d)||!(x.a>0)||!Number.isFinite(x.a)||!/^[A-Z]{3}$/.test(x.c))return [];
+    return [{d:x.d,a:x.a,c:x.c,t:['income','expense','transfer'].includes(x.t)?x.t:'expense',k:String(x.k||'Other').slice(0,30),n:String(x.n||'').slice(0,120),s:String(x.s||'').slice(0,20)}];
+  }).map((x,i)=>({...x,id:i+1}));
+}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let ledger=cleanTx(get(TX_KEY,[]));
+const saveTx=()=>put(TX_KEY,ledger.map(({id,...x})=>x));
+let state=clean(get(KEY,null));
+let rates=get(RATE_KEY,null)||BUILT_IN;
+let rateState='loading';
+
+const known=c=>rates.r[c]>0;
+const unit=()=>known(state.ccy)?rates.r[state.ccy]:1;              // my currency per 1 USD
+const eff=()=>state.move?state.dest:state.ccy;                     // currency of the life I'm planning
+const dpu=()=>{const c=eff();if(c===state.ccy)return unit();if(!state.fxAuto)return state.fx*unit();return known(c)?rates.r[c]:1};
+const crossBorder=()=>state.move&&state.dest!==state.ccy;
+const spendUsd=()=>Object.keys(COSTS).reduce((a,k)=>a+state[k],0);
+const M=usd=>`${state.ccy} ${fmt(usd*unit())}`;
+const D=x=>`${eff()} ${fmt(x)}`;
+function big(x){
+  const p=Math.abs(x);
+  if(!LAKH.includes(eff())||p<1e5)return D(p);
+  return p>=1e7?`${eff()} ${(p/1e7).toFixed(2).replace(/\.?0+$/,'')} crore`:`${eff()} ${(p/1e5).toFixed(1).replace(/\.0$/,'')} lakh`;
+}
+const tidy=v=>{if(v<=0)return 0;const p=Math.pow(10,Math.floor(Math.log10(v))-1);return Math.round(v/p)*p};
+function niceStep(x){const p=Math.pow(10,Math.floor(Math.log10(x))),n=x/p;return (n<1.5?1:n<3.5?2:n<7.5?5:10)*p}
+
+// build the controls
+const numBox=(id,cls='')=>`<span class="num"><span class="unit ${cls}"></span><input type="text" id="${id}" inputmode="decimal"></span>`;
+const slider=(id,label,hint)=>`<div class="field"><label for="${id}">${label}</label><div class="row"><input type="range" id="${id}R" aria-label="${label}">${numBox(id,'uMine')}</div>${hint!==undefined?`<p class="hint" id="${id}H">${hint}</p>`:''}</div>`;
+const line=(id,label,cls)=>`<div class="line"><label for="${id}">${label}</label>${numBox(id,cls)}</div>`;
+$('basicFields').innerHTML=slider('cur','Savings right now')+slider('save','Saving each month');
+$('costs').innerHTML=Object.entries(COSTS).map(([k,l])=>line(k,l,'uMine')).join('')+`<div class="line total"><span>Total</span><span id="costTotal"></span></div>`;
+$('rentFields').innerHTML=line('mRent',LOCAL.mRent,'uPlan')+line('mOther',LOCAL.mOther,'uPlan');
+$('buyFields').innerHTML=line('price',LOCAL.price,'uPlan')+line('own',LOCAL.own,'uPlan');
+$('sideField').innerHTML=line('side','Income from light work','uPlan');
+$('advFields').innerHTML=Object.entries(PCT).map(([k,f])=>`<div class="field"><label for="${k}">${f.label}</label><div class="row"><input type="range" id="${k}R" aria-label="${f.label}" min="${f.min}" max="${f.max}" step="${f.step}"><span class="num"><span class="unit">%</span><input type="text" id="${k}" inputmode="decimal"></span></div><p class="hint" id="${k}H">${f.hint||''}</p></div>`).join('');
+$('fxField').innerHTML=`<div class="line"><label for="fx" id="fxLabel"></label>${numBox('fx','uPlan')}</div>`;
+
+function currencies(){
+  const names=new Intl.DisplayNames(['en'],{type:'currency'});
+  const all=Object.keys(rates.r).sort(),top=POPULAR.filter(known),rest=all.filter(c=>!POPULAR.includes(c));
+  const opt=c=>{let n=c;try{n=names.of(c)}catch(e){}return `<option value="${c}">${n} (${c})</option>`};
+  const html=`<optgroup label="Common">${top.map(opt).join('')}</optgroup>`+(rest.length?`<optgroup label="All">${rest.map(opt).join('')}</optgroup>`:'');
+  ['ccy','dest','wCcy','txCcy'].forEach(id=>{const e=$(id),v=e.value;e.innerHTML=html;if(v)e.value=v});
+}
+
+// push state into every control
+function paint(){
+  const u=unit(),d=dpu(),focus=document.activeElement;
+  const set=(id,v)=>{if(focus!==$(id))$(id).value=v};
+  const tUsd=target(state.home)/d;
+  const curMax=Math.max(tUsd,state.cur*2,1000),saveMax=Math.max(spendUsd()*2,state.save*2,100);
+  for(const [k,max] of [['cur',curMax],['save',saveMax]]){
+    const r=$(k+'R');r.min=0;r.max=max*u;r.step=niceStep(max*u/200);r.value=state[k]*u;set(k,fmt(state[k]*u));
+  }
+  for(const k in COSTS)set(k,fmt(state[k]*u));
+  for(const k in LOCAL)set(k,fmt(state[k]));
+  set('side',fmt(state.side*d));
+  for(const k in PCT){$(k+'R').value=state[k];set(k,String(state[k]))}
+  set('fx',(d/u).toFixed(d/u<1?4:2));
+  set('place',state.place);
+  document.querySelectorAll('.uMine').forEach(e=>e.textContent=state.ccy);
+  document.querySelectorAll('.uPlan').forEach(e=>e.textContent=eff());
+  document.querySelector(`input[name=move][value=${state.move?'move':'stay'}]`).checked=true;
+  document.querySelector(`input[name=home][value=${state.home}]`).checked=true;
+  $('ccy').value=state.ccy;$('dest').value=state.dest;$('fxAuto').checked=state.fxAuto;$('goalYR').value=state.goalY;
+  $('fxLabel').textContent=`${eff()} per 1 ${state.ccy}`;
+  $('rateBox').hidden=!crossBorder();
+  rateNote();
+}
+function rateNote(){
+  const when=new Date(rates.at).toLocaleDateString('en-US',{day:'numeric',month:'short'});
+  $('retry').hidden=rateState!=='failed'||!state.fxAuto;
+  $('rateNote').textContent=!state.fxAuto?'You are using your own exchange rate.'
+    :rateState==='loading'?"Getting today's exchange rate."
+    :rateState==='live'?`Live exchange rate from ${when}.`
+    :`No connection, so this is the exchange rate from ${when}.`;
+}
+
+const mRate=a=>Math.pow(1+a/100,1/12)-1;     // yearly return -> true monthly rate
+function monthsTo(goal,cur,save,ret){
+  if(cur>=goal)return 0;
+  const r=mRate(ret);let b=cur;
+  for(let m=1;m<=MAX_M;m++){b=b*(1+r)+save;if(b>=goal)return m}
+  return null;
+}
+function potAt(m,cur,save,ret){
+  const r=mRate(ret),g=Math.pow(1+r,m);
+  return r>0?cur*g+save*(g-1)/r:cur+save*m;
+}
+// goal in the plan currency; cutNow lowers today's spending (USD), cutLater lowers the future month
+function target(home,{cutNow=0,cutLater=0,wr=state.wr}={}){
+  const s=state,d=dpu(),now=(spendUsd()-cutNow)*d;
+  const month=!s.move?now:home==='buy'?(s.own||now):((s.mRent+s.mOther)||now);
+  return Math.max(0,month-cutLater-s.side*d)*12/(wr/100)+(s.move&&home==='buy'?s.price:0);
+}
+const when=m=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()+m);return d.toLocaleDateString('en-US',{month:'short',year:'numeric'})};
+function dur(m){
+  if(m===0)return 'Now';
+  const y=Math.floor(m/12),mo=m%12;
+  return [y?y+(y===1?' year':' years'):'',mo?mo+' mo':''].filter(Boolean).join(' ');
+}
+let last=null;
+
+function calc(){
+  put(KEY,state);
+  if(!state.started)return;
+  const s=state,u=unit(),d=dpu(),live=spendUsd();
+  const inPlace=s.move&&s.place?` in ${s.place}`:'';
+  $('costTotal').textContent=M(live);
+  $('sumSpend').textContent=`${M(live)} a month`;
+  $('moveFields').hidden=!s.move;
+  $('rentFields').hidden=s.home!=='rent';$('buyFields').hidden=s.home!=='buy';
+  const later=!s.move?live*d:s.home==='buy'?(s.own||live*d):((s.mRent+s.mOther)||live*d);
+  $('sumPlan').textContent=s.move?(s.place||'Moving'):'Staying here';
+
+  const goal=target(s.home), tS=goal/d;
+  const hit=monthsTo(tS,s.cur,s.save,s.ret);
+  const lo=Math.max(0,s.ret-SPREAD), hi=s.ret+SPREAD;
+  const hitLo=monthsTo(tS,s.cur,s.save,lo), hitHi=monthsTo(tS,s.cur,s.save,hi);
+  const earn=s.save+live;
+
+  // hero
+  $('headline').textContent=goal>0?`Your number is ${big(goal)}.`:'Your work income already covers your costs.';
+  const also=eff()!==s.ccy?` That is ${M(tS)}.`:'';
+  $('lede').textContent=goal<=0?'You would not need a pot at all, as long as that income keeps coming in.':`That is what you need invested to cover your costs${inPlace} for good.${also} You have ${M(s.cur)} today. `+(hit===null?`Saving ${M(s.save)} a month won't get you there, so try saving more.`:hit===0?`You already have enough.`:`Saving ${M(s.save)} a month gets you there around ${when(hit)}.`);
+  const frac=tS>0?Math.min(1,s.cur/tS):1;
+  const crest=$('crest');
+  if(crest.getTotalLength()){const pt=crest.getPointAtLength(frac*crest.getTotalLength());$('you').setAttribute('cx',pt.x);$('you').setAttribute('cy',pt.y)}
+  $('progress').textContent=frac>=1?'You have reached the top.':`You are ${frac<.1?(frac*100).toFixed(1):Math.round(frac*100)}% of the way up.`;
+  $('dockA').textContent=big(goal);
+  $('dockB').textContent=hit===null?'Save more':hit===0?'Done':when(hit);
+
+  // hints
+  const stepLater=tidy(later*.1)||tidy(100*d);
+  $('sideH').textContent=`Every ${D(stepLater)} a month you earn takes ${big(stepLater*12/(s.wr/100))} off your number.`;
+  $('wrH').textContent=`4% is the usual rule, tested on 30-year retirements. Stopping young, 3.5% is safer and needs ${big(target(s.home,{wr:3.5}))}.`;
+
+  // what it takes
+  $('paceV').textContent=hit===null?'60+ years':dur(hit);
+  $('paceV').className='v'+(hit===null?' bad':'');
+  $('paceD').textContent=hit===null?'Try saving more, or lowering your costs.':`Done around ${when(hit)}. That takes earning ${M(earn)} a month.`;
+  const n=s.goalY*12,r=mRate(s.ret),g=Math.pow(1+r,n);
+  const need=Math.max(0,r>0?(tS-s.cur*g)*r/(g-1):(tS-s.cur)/n);
+  $('goalH').textContent=`To finish in ${s.goalY} ${s.goalY===1?'year':'years'}`;
+  $('needV').textContent=`${M(need)} a month`;
+  $('needD').textContent=`That's what to save. It takes earning ${M(need+live)} a month.`;
+  const rng=a=>a===null?'more than 60 years':dur(a);
+  $('range').textContent=hit===0||hit===null?'':`Returns are never certain. At ${hi}% it takes ${rng(hitHi)}. At ${lo}% it takes ${rng(hitLo)}.`;
+
+  // chart data, one point per year
+  const span=Math.min(40,Math.max(5,Math.ceil(((hit??hitLo??480)/12)+1)));
+  const pts=[];
+  for(let y=0;y<=span;y++){const m=y*12;pts.push({y,mid:potAt(m,s.cur,s.save,s.ret),lo:potAt(m,s.cur,s.save,lo),hi:potAt(m,s.cur,s.save,hi),own:s.cur+s.save*m})}
+  last={pts,tS,d,u};
+  $('lgMid').textContent=`Pot at ${s.ret}%`;$('lgBand').textContent=`${lo}% to ${hi}%`;
+  draw();
+
+  if(hit>0){const own=s.cur+s.save*hit,gain=Math.max(0,tS-own);
+    $('split').textContent=`You put in ${M(Math.min(own,tS))} yourself. Growth adds about ${M(gain)}, which is ${Math.round(gain/tS*100)}% of the pot.`}
+  else $('split').textContent='';
+
+  const startYear=new Date().getFullYear();
+  const shown=pts.filter(p=>hit===null||p.y<=Math.ceil(hit/12));
+  $('yearly').innerHTML=`<thead><tr><th>Year</th><th>Pot</th><th>Your money</th><th>Growth</th><th>Pays per month</th></tr></thead><tbody>`+shown.map(p=>`<tr><td>${startYear+p.y}</td><td>${M(p.mid)}</td><td>${M(p.own)}</td><td>${M(p.mid-p.own)}</td><td>${D(p.mid*d*(s.wr/100)/12)}</td></tr>`).join('')+'</tbody>';
+
+  // milestones
+  const housing=!s.move?s.cHome*d:s.home==='rent'?s.mRent:0;
+  const stops=[{t:tS/2,l:'Halfway',d:`${M(tS/2)} in the pot.`},
+    {t:live*3,l:'Safety cushion ready',d:`${M(live*3)}, which is 3 months of spending. Keep this in cash before you invest, and clear any high-interest debt first.`}];
+  if(housing>0)stops.push({t:housing*12/(s.wr/100)/d,l:'Your pot pays your housing',d:`It could pay ${D(housing)} a month from here on.`});
+  if(s.move&&s.home==='buy'&&s.price>0)stops.push({t:s.price/d,l:'You can afford the home',d:`${big(s.price)} in the pot. Buying now would pause the rest of the plan.`});
+  const route=stops.filter(p=>p.t>0&&p.t<tS).sort((a,b)=>a.t-b.t);
+  route.push({t:tS,l:'Financial freedom',d:'The pot covers your monthly costs for good.'});
+  $('steps').innerHTML=route.map(p=>{const m=monthsTo(p.t,s.cur,s.save,s.ret);
+    return `<li class="${m===0?'done':''}"><span class="when">${m===0?'Done':m===null?'Not yet':when(m)}</span><span class="what">${p.l}<small>${p.d}</small></span></li>`}).join('');
+
+  // what moves the date
+  $('moves').hidden=hit===0||goal<=0;
+  const times=Math.round(1000/s.wr)/10;
+  const stepCut=tidy(later*.05)||tidy(50*d);
+  $('movesNote').textContent=`Your number is ${times} times your yearly costs${s.move&&s.home==='buy'&&s.price?', plus the home':''}. So every ${D(stepCut)} a month you cut takes ${big(stepCut*12/(s.wr/100))} off it.`;
+  const gain=m=>m===null?'Still too long':hit===null?`Done around ${when(m)}`:hit-m>0?`${dur(hit-m)} sooner`:'No change';
+  const more=(tidy(earn*.1*u)||tidy(100*u))/u,less=(tidy(live*.05*u)||tidy(50*u))/u;
+  const rows=[{l:`Earn ${M(more)} more and save it`,d:'Keep your spending the same when your pay goes up.',m:monthsTo(tS,s.cur,s.save+more,s.ret)}];
+  if(!s.move){
+    const low=target(s.home,{cutNow:less})/d;
+    rows.push({l:`Spend ${M(less)} less a month`,d:`You save more, and your number drops by ${big(goal-low*d)}.`,m:monthsTo(low,s.cur,s.save+less,s.ret)});
+  }else{
+    rows.push({l:`Spend ${M(less)} less a month now`,d:'Saves it every month until you move.',m:monthsTo(tS,s.cur,s.save+less,s.ret)});
+    const low=target(s.home,{cutLater:stepCut});
+    rows.push({l:`Need ${D(stepCut)} less a month later`,d:`Takes ${big(goal-low)} off your number.`,m:monthsTo(low/d,s.cur,s.save,s.ret)});
+  }
+  $('levers').innerHTML=rows.map(p=>`<li><span class="what">${p.l}<small>${p.d}</small></span><span class="when">${gain(p.m)}</span></li>`).join('');
+
+  // pay table around today's income
+  const pays=[earn,...[.85,1.25,1.5,2,3].map(k=>tidy(earn*k*u)/u)].filter(v=>v>0).sort((a,b)=>a-b);
+  $('salaries').innerHTML=`<thead><tr><th>Monthly income</th><th>You save</th><th>Time</th><th>Done around</th><th></th></tr></thead><tbody>`+pays.map(sal=>{
+    const sv=Math.max(0,sal-live),m=sv>0?monthsTo(tS,s.cur,sv,s.ret):null,me=sal===earn;
+    return `<tr class="${me?'me':''}"><td>${M(sal)}</td><td>${sv>0?M(sv):'Nothing'}</td><td>${m===null?'Too long':dur(m)}</td><td>${m===null?'':when(m)}</td><td>${sv>0&&!me?`<button type="button" data-save="${sv}">Use this</button>`:me?'Your plan':''}</td></tr>`}).join('')+'</tbody>';
+
+  // rent vs buy
+  $('cmpFold').hidden=!(s.move&&s.price>0);
+  if(s.move&&s.price>0){
+    const tr=target('rent'),tb=target('buy');
+    const mr=monthsTo(tr/d,s.cur,s.save,s.ret),mb=monthsTo(tb/d,s.cur,s.save,s.ret);
+    const away=m=>m===null?'More than 60 years away.':`Done around ${when(m)}.`;
+    $('cmpRentV').textContent=big(tr);$('cmpBuyV').textContent=big(tb);
+    $('cmpRentD').textContent=away(mr);$('cmpBuyD').textContent=`Includes the home. ${away(mb)}`;
+    $('cmpRent').classList.toggle('on',s.home==='rent');$('cmpBuy').classList.toggle('on',s.home==='buy');
+    const diff=tr-tb;
+    $('cmpNote').textContent=(Math.abs(diff)<tr*.01?'Both plans need about the same.':diff>0?`Buying needs ${big(diff)} less overall.`:`Renting needs ${big(diff)} less overall.`)+' A home is harder to sell than a fund is, so try the area first if you can.';
+  }
+}
+
+// money history
+const monthKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+function fullMonths(n){const a=[],d=new Date();d.setDate(1);for(let i=0;i<n;i++){d.setMonth(d.getMonth()-1);a.unshift(monthKey(d))}return a}
+const usdOf=x=>known(x.c)?x.a/rates.r[x.c]:0;
+const monthName=k=>new Date(+k.slice(0,4),+k.slice(5)-1,1).toLocaleDateString('en-US',{month:'short',year:'numeric'});
+function monthly(){
+  const m={};
+  for(const x of ledger){const k=x.d.slice(0,7);m[k]=m[k]||{spend:0,income:0};if(x.t==='expense')m[k].spend+=usdOf(x);if(x.t==='income')m[k].income+=usdOf(x)}
+  return m;
+}
+function byCurrency(){
+  const out=[];
+  for(const c of [...new Set(ledger.map(x=>x.c))]){
+    const m={};
+    for(const x of ledger)if(x.c===c&&x.t==='expense'){const k=x.d.slice(0,7);m[k]=m[k]||{sum:0,n:0};m[k].sum+=x.a;m[k].n++}
+    const active=Object.keys(m).filter(k=>m[k].n>=5).sort().slice(-12);
+    if(active.length<3)continue;
+    const avg=active.reduce((a,k)=>a+m[k].sum,0)/active.length;
+    const mid=active[Math.floor(active.length/2)];
+    const years=Math.max(0,(Date.now()-new Date(+mid.slice(0,4),+mid.slice(5)-1,15))/31557600000);
+    const today=avg*Math.pow(1+state.infl/100,years);
+    out.push(`In ${c}, you spent about ${fmt(avg)} a month from ${monthName(active[0])} to ${monthName(active[active.length-1])}`+(years>=.75?`, which is about ${fmt(today)} at today's prices.`:'.'));
+  }
+  return out.join(' ');
+}
+function drawBars(){
+  const box=$('bars'),w=box.parentElement.clientWidth;
+  if(!ledger.length||!w)return;
+  const W=Math.max(280,w-16),H=170,L=52,R=8,T=10,B=24,keys=fullMonths(24),m=monthly();
+  const vals=keys.map(k=>(m[k]?m[k].spend:0)*unit()),top=Math.max(...vals,1)*1.1;
+  const raw=top/3,mag=Math.pow(10,Math.floor(Math.log10(raw))),step=[1,2,2.5,5,10].map(k=>k*mag).find(k=>k>=raw);
+  const tick=v=>v>=1e6?(v/1e6).toFixed(1).replace(/\.0$/,'')+'M':v>=1e3?(v/1e3).toFixed(1).replace(/\.0$/,'')+'k':String(Math.round(v));
+  const y=v=>T+(1-v/top)*(H-T-B),slot=(W-L-R)/keys.length,bw=Math.max(3,slot-3);
+  let o='';
+  for(let v=0;v<=top;v+=step)o+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end">${tick(v)}</text>`;
+  keys.forEach((k,i)=>{
+    const px=L+i*slot+1.5,h=H-B-y(vals[i]);
+    if(h>0)o+=`<rect class="bar" x="${px}" y="${y(vals[i])}" width="${bw}" height="${h}" rx="2"><title>${monthName(k)}: ${state.ccy} ${fmt(vals[i])}</title></rect>`;
+    if(i%(W<480?8:4)===0)o+=`<text x="${px}" y="${H-6}">${monthName(k)}</text>`;
+  });
+  box.setAttribute('viewBox',`0 0 ${W} ${H}`);box.setAttribute('height',H);box.innerHTML=o;
+}
+let txShown=50;
+function txOptions(x){
+  const list=CATS[x.t].includes(x.k)?CATS[x.t]:[x.k,...CATS[x.t]];
+  return list.map(c=>`<option${c===x.k?' selected':''}>${esc(c)}</option>`).join('');
+}
+function renderTx(){
+  const q=$('txSearch').value.trim().toLowerCase(),f=$('txFilter').value;
+  const rows=ledger.filter(x=>(f==='all'||x.t===f||(f==='unsorted'&&x.k==='Unsorted'))&&(!q||`${x.n} ${x.k} ${x.s}`.toLowerCase().includes(q))).sort((a,b)=>b.d.localeCompare(a.d)||b.id-a.id);
+  $('txCount').textContent=`${fmt(ledger.length)} saved`;
+  $('txTable').innerHTML=`<thead><tr><th>Date</th><th class="memo">Details</th><th>Amount</th><th>Type</th><th>Category</th><th></th></tr></thead><tbody>`+rows.slice(0,txShown).map(x=>`<tr data-id="${x.id}"><td>${x.d}</td><td class="memo">${esc(x.n)||'No note'}${x.s?`<small>${esc(x.s)}</small>`:''}</td><td>${esc(x.c)} ${x.a.toLocaleString('en-US')}</td><td><select aria-label="Type" data-f="t">${['expense','income','transfer'].map(t=>`<option value="${t}"${t===x.t?' selected':''}>${t[0].toUpperCase()+t.slice(1)}</option>`).join('')}</select></td><td><select aria-label="Category" data-f="k">${txOptions(x)}</select></td><td><button type="button" class="x" aria-label="Delete this transaction">Delete</button></td></tr>`).join('')+'</tbody>';
+  $('txMore').hidden=rows.length<=txShown;
+}
+function renderLedger(){
+  const has=ledger.length>0;
+  $('ledgerEmpty').hidden=has;$('ledgerStats').hidden=!has;$('txFold').hidden=!has;
+  if(has){
+    const m=monthly(),keys=fullMonths(6),sum=f=>keys.reduce((a,k)=>a+(m[k]?m[k][f]:0),0)/6;
+    $('lgSpend').textContent=M(sum('spend'));$('lgIncome').textContent=M(sum('income'));
+    $('lgByCcy').textContent=byCurrency();
+    drawBars();renderTx();
+  }
+}
+function fillCats(){
+  const t=$('txType').value;$('txCat').innerHTML=CATS[t].map(c=>`<option>${esc(c)}</option>`).join('');
+}
+
+function draw(){
+  if(!last||!$('chartbox').clientWidth)return;
+  const {pts,tS,u}=last,box=$('chart');
+  const W=Math.max(280,$('chartbox').clientWidth-16),H=W<480?240:300,L=52,R=24,T=14,B=26;
+  box.setAttribute('viewBox',`0 0 ${W} ${H}`);box.setAttribute('height',H);
+  const maxX=pts[pts.length-1].y, goal=tS*u;
+  const top=Math.max(goal,pts[0].mid*u,1)*1.15;
+  const x=t=>L+t/maxX*(W-L-R), y=v=>T+(1-Math.min(v*u,top)/top)*(H-T-B);
+  const raw=top/4,mag=Math.pow(10,Math.floor(Math.log10(raw)));
+  const step=[1,2,2.5,5,10].map(k=>k*mag).find(k=>k>=raw);
+  const tick=v=>v>=1e6?(v/1e6).toFixed(1).replace(/\.0$/,'')+'M':v>=1e3?(v/1e3).toFixed(1).replace(/\.0$/,'')+'k':String(Math.round(v));
+  let o='';
+  for(let v=0;v<=top;v+=step){const py=y(v/u);o+=`<line x1="${L}" x2="${W-R}" y1="${py}" y2="${py}" stroke="var(--line)"/><text x="${L-8}" y="${py+4}" text-anchor="end">${tick(v)}</text>`}
+  const yr=new Date().getFullYear(),every=Math.ceil(maxX/(W<480?4:8));
+  for(let t=0;t<=maxX;t+=every)o+=`<text x="${x(t)}" y="${H-6}" text-anchor="middle">${yr+t}</text>`;
+  const band=pts.map(p=>`${x(p.y)},${y(p.hi)}`).concat(pts.slice().reverse().map(p=>`${x(p.y)},${y(p.lo)}`)).join(' ');
+  o+=`<polygon points="${band}" fill="var(--accent-soft)"/>`;
+  o+=`<line x1="${L}" x2="${W-R}" y1="${y(tS)}" y2="${y(tS)}" stroke="var(--goal)" stroke-width="2" stroke-dasharray="5 4"/><text class="goalt" x="${L+6}" y="${y(tS)+16}">Goal: ${M(tS)}</text>`;
+  o+=`<polyline points="${pts.map(p=>`${x(p.y)},${y(p.mid)}`).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>`;
+  o+=`<line id="cross" y1="${T}" y2="${H-B}" stroke="var(--muted)" visibility="hidden"/><circle id="dot" r="5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>`;
+  box.innerHTML=o;
+  last.x=x;last.y=y;last.W=W;
+}
+function hover(e){
+  if(!last||!last.x)return;
+  const {pts,x,y,d,W}=last,cb=$('chartbox'),rect=$('chart').getBoundingClientRect();
+  const px=(e.clientX-rect.left)/rect.width*W;
+  let p=pts[0];for(const q of pts)if(Math.abs(x(q.y)-px)<Math.abs(x(p.y)-px))p=q;
+  const c=$('cross'),dot=$('dot'),t=$('tip');
+  c.setAttribute('x1',x(p.y));c.setAttribute('x2',x(p.y));c.setAttribute('visibility','visible');
+  dot.setAttribute('cx',x(p.y));dot.setAttribute('cy',y(p.mid));dot.setAttribute('visibility','visible');
+  t.innerHTML=`<b>${new Date().getFullYear()+p.y}</b><div><span>Pot</span><span>${M(p.mid)}</span></div><div><span>Your money</span><span>${M(p.own)}</span></div><div><span>Growth</span><span>${M(p.mid-p.own)}</span></div><div><span>Pays per month</span><span>${D(p.mid*d*(state.wr/100)/12)}</span></div>`;
+  t.style.display='block';
+  const left=x(p.y)/W*cb.clientWidth,tw=t.offsetWidth;
+  t.style.left=(left+tw+18>cb.clientWidth?left-tw-10:left+10)+'px';
+}
+function unhover(){if($('cross')){$('cross').setAttribute('visibility','hidden');$('dot').setAttribute('visibility','hidden')}$('tip').style.display='none'}
+
+// live rates: two free no-key sources, then the last saved rate
+async function getJson(url){
+  const c=new AbortController(),t=setTimeout(()=>c.abort(),6000);
+  try{const r=await fetch(url,{signal:c.signal});if(!r.ok)throw new Error(r.status);return await r.json()}finally{clearTimeout(t)}
+}
+const SOURCES=[
+  async()=>{const j=await getJson('https://open.er-api.com/v6/latest/USD');return {r:j.rates,at:j.time_last_update_unix*1000}},
+  async()=>{const j=await getJson('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.min.json');
+    const r={};for(const c in j.usd)if(/^[a-z]{3}$/.test(c)&&j.usd[c]>0)r[c.toUpperCase()]=j.usd[c];return {r,at:Date.parse(j.date)}}
+];
+async function refreshRates(){
+  rateState='loading';rateNote();
+  for(const src of SOURCES){
+    try{
+      const {r,at}=await src();
+      if(!Object.keys(BUILT_IN.r).every(c=>r[c]>0)||!at)continue;
+      rates={r,at,src:'live'};put(RATE_KEY,rates);rateState='live';
+      currencies();show();return;
+    }catch(e){}
+  }
+  rateState='failed';rateNote();
+}
+
+// save and load plans
+function exportPlan(){
+  const {started,...plan}=state;
+  const blob=new Blob([JSON.stringify({app:'financial-freedom',version:3,saved:new Date().toISOString(),plan,history:ledger.map(({id,...x})=>x)},null,1)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`financial-freedom-plan-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  $('toolNote').textContent='Plan saved to your downloads.';
+}
+function say(msg){
+  if(state.started)$('toolNote').textContent=msg;
+  else{$('wErr').textContent=msg;$('wErr').hidden=false}
+}
+async function importPlan(file){
+  try{
+    if(file.size>2e7)throw 0;
+    const j=JSON.parse(await file.text());
+    if(j.app!=='financial-freedom'||!j.plan||typeof j.plan!=='object')throw 0;
+    state={...clean(j.plan),started:true};
+    ledger=cleanTx(j.history);saveTx();txShown=50;
+    put(TOUR_KEY,true);show();
+    $('toolNote').textContent=`Loaded ${file.name}.`;
+  }catch(e){say('That file is not a Financial Freedom plan.')}
+}
+function show(){
+  $('welcome').hidden=state.started;$('app').hidden=!state.started;$('dock').hidden=!state.started;
+  if(state.started){paint();calc();draw();renderLedger()}
+}
+
+// controls
+function edit(id,raw,fromSlider){
+  const n=parse(raw);if(!Number.isFinite(n))return;
+  const v=Math.max(0,n);
+  if(id==='fx'){state.fxAuto=false;state.fx=Math.max(1e-6,v);$('fxAuto').checked=false;rateNote()}
+  else if(id==='side')state.side=v/dpu();
+  else if(MONEY.includes(id))state[id]=v/unit();
+  else if(id in PCT)state[id]=Math.max(PCT[id].min,v);
+  else state[id]=v;
+  if(fromSlider)$(id).value=id in PCT?String(v):fmt(v);
+  else if($(id+'R'))$(id+'R').value=v;
+  calc();
+}
+for(const id of [...MONEY,...Object.keys(LOCAL),...Object.keys(PCT),'fx']){
+  $(id).addEventListener('input',()=>edit(id,$(id).value,false));
+  $(id).addEventListener('blur',paint);
+  if($(id+'R'))$(id+'R').addEventListener('input',()=>edit(id,$(id+'R').value,true));
+}
+$('place').addEventListener('input',()=>{state.place=$('place').value;calc()});
+document.querySelectorAll('input[name=move]').forEach(i=>i.addEventListener('change',()=>{state.move=i.value==='move';paint();calc()}));
+document.querySelectorAll('input[name=home]').forEach(i=>i.addEventListener('change',()=>{state.home=i.value;paint();calc()}));
+$('ccy').addEventListener('change',()=>{state.ccy=$('ccy').value;$('txCcy').value=state.ccy;paint();calc();renderLedger()});
+$('infl').addEventListener('input',()=>$('lgByCcy').textContent=byCurrency());
+$('inflR').addEventListener('input',()=>$('lgByCcy').textContent=byCurrency());
+$('txType').addEventListener('change',fillCats);
+$('txForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const a=parse($('txAmount').value),d=$('txDate').value;
+  if(!(a>0)||!d){$('txMsg').textContent='Enter a date and an amount.';return}
+  ledger.push({id:ledger.reduce((m,x)=>Math.max(m,x.id),0)+1,d,a,c:$('txCcy').value,t:$('txType').value,k:$('txCat').value,n:$('txNote').value.trim().slice(0,120),s:'Added by hand'});
+  saveTx();renderLedger();
+  $('txAmount').value='';$('txNote').value='';$('txMsg').textContent='Added.';$('txAmount').focus();
+});
+$('txSearch').addEventListener('input',()=>{txShown=50;renderTx()});
+$('txFilter').addEventListener('change',()=>{txShown=50;renderTx()});
+$('txMore').addEventListener('click',()=>{txShown+=100;renderTx()});
+$('txTable').addEventListener('change',e=>{
+  const f=e.target.dataset.f,row=e.target.closest('tr');if(!f||!row)return;
+  const x=ledger.find(i=>i.id===+row.dataset.id);if(!x)return;
+  x[f]=e.target.value;
+  if(f==='t')x.k=CATS[x.t][0];
+  saveTx();renderLedger();
+});
+$('txTable').addEventListener('click',e=>{
+  if(!e.target.classList.contains('x'))return;
+  const id=+e.target.closest('tr').dataset.id;
+  ledger=ledger.filter(i=>i.id!==id);saveTx();renderLedger();
+});
+$('useReal').addEventListener('click',()=>{
+  const keys=new Set(fullMonths(6)),sums={};
+  for(const x of ledger)if(x.t==='expense'&&keys.has(x.d.slice(0,7))){const c=TO_COST[x.k]||'cMisc';sums[c]=(sums[c]||0)+usdOf(x)/6}
+  if(!Object.keys(sums).length){$('lgNote').textContent='There is no spending in the last 6 full months to use.';return}
+  for(const k in COSTS)state[k]=sums[k]||0;
+  paint();calc();$('lgNote').textContent='My spending now uses your real numbers.';
+});
+$('dest').addEventListener('change',()=>{state.dest=$('dest').value;state.fxAuto=true;paint();calc()});
+$('fxAuto').addEventListener('change',()=>{const d=dpu()/unit();state.fxAuto=$('fxAuto').checked;if(!state.fxAuto)state.fx=d;paint();calc()});
+$('goalYR').addEventListener('input',()=>{state.goalY=+$('goalYR').value;calc()});
+$('retry').addEventListener('click',refreshRates);
+$('exportBtn').addEventListener('click',exportPlan);
+$('importBtn').addEventListener('click',()=>$('planFile').click());
+$('wImport').addEventListener('click',()=>$('planFile').click());
+$('planFile').addEventListener('change',()=>{const f=$('planFile').files[0];$('planFile').value='';if(f)importPlan(f)});
+let wipeTimer=0;
+$('reset').addEventListener('click',()=>{
+  const b=$('reset');
+  if(!wipeTimer){b.textContent='Click again to erase';wipeTimer=setTimeout(()=>{b.textContent='Start over';wipeTimer=0},4000);return}
+  clearTimeout(wipeTimer);wipeTimer=0;b.textContent='Start over';
+  state=defaults();put(KEY,state);ledger=[];saveTx();$('wForm').reset();$('wCcy').value='USD';$('wErr').hidden=true;
+  show();scrollTo(0,0);
+});
+$('salaries').addEventListener('click',e=>{const v=e.target.dataset&&e.target.dataset.save;if(v){state.save=+v;paint();calc()}});
+$('chartbox').addEventListener('pointermove',hover);
+$('chartbox').addEventListener('pointerleave',unhover);
+new ResizeObserver(()=>{draw();drawBars()}).observe($('chartbox'));
+
+$('wForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const spend=parse($('wSpend').value),cur=parse($('wCur').value)||0,save=parse($('wSave').value)||0;
+  if(!(spend>0)){$('wErr').textContent='Enter what you spend in a month to continue.';$('wErr').hidden=false;$('wSpend').focus();return}
+  $('wErr').hidden=true;
+  state.ccy=$('wCcy').value;state.dest=state.ccy;
+  const u=unit();
+  state.cMisc=spend/u;state.cur=Math.max(0,cur)/u;state.save=Math.max(0,save)/u;state.started=true;
+  show();scrollTo(0,0);
+  if(!get(TOUR_KEY,false))openTour();
+});
+
+// tutorial
+const TOUR=[
+  {el:'hero',t:'This is your number',p:'It is how much you need invested so the returns pay your costs without a salary. It updates when you change anything.'},
+  {el:'basics',t:'Change these any time',p:'Slide or type your savings and what you save each month to see your date move.'},
+  {el:'settings',t:'Add more detail',p:'Open these to split up your spending, or to plan a move somewhere cheaper. You can ignore Advanced.'},
+  {el:'takes',t:'See when you get there',p:'This shows how long your plan takes, and what to save to finish sooner. Drag the slider to try a different number of years.'},
+  {el:'tools',t:'Keep your plan safe',p:'Your numbers stay in this browser only. Save your plan to a file so you can load it again here or on another device.'}
+];
+let tourAt=-1;
+function placeTour(){
+  if(tourAt<0)return;
+  const r=$(TOUR[tourAt].el).getBoundingClientRect(),pad=8,vw=innerWidth,vh=innerHeight,spot=$('tourSpot'),card=$('tourCard');
+  const top=Math.max(8,r.top-pad),bottom=Math.min(vh-8,r.bottom+pad);
+  Object.assign(spot.style,{left:r.left-pad+'px',top:top+'px',width:r.width+pad*2+'px',height:Math.max(0,bottom-top)+'px'});
+  const ch=card.offsetHeight,cw=card.offsetWidth;
+  let cy=bottom+12<=vh-ch-8?bottom+12:top-ch-12>=8?top-ch-12:vh-ch-16;
+  let cx=Math.min(Math.max(16,r.left),vw-cw-16);
+  if(cy===vh-ch-16&&r.right+cw+24<=vw)cx=r.right+20;
+  card.style.left=cx+'px';card.style.top=cy+'px';
+}
+function showStep(i){
+  tourAt=i;const s=TOUR[i];
+  $('tourCount').textContent=`Step ${i+1} of ${TOUR.length}`;
+  $('tourTitle').textContent=s.t;$('tourText').textContent=s.p;
+  $('tourBack').hidden=i===0;
+  $('tourNext').textContent=i===TOUR.length-1?'Done':'Next';
+  $(s.el).scrollIntoView({block:'center'});
+  placeTour();$('tourNext').focus();
+}
+function openTour(){['tourShade','tourSpot','tourCard'].forEach(i=>$(i).hidden=false);showStep(0)}
+function closeTour(){
+  tourAt=-1;['tourShade','tourSpot','tourCard'].forEach(i=>$(i).hidden=true);
+  put(TOUR_KEY,true);$('tourBtn').focus({preventScroll:true});scrollTo(0,0);
+}
+$('tourBtn').addEventListener('click',openTour);
+$('tourSkip').addEventListener('click',closeTour);
+$('tourBack').addEventListener('click',()=>showStep(tourAt-1));
+$('tourNext').addEventListener('click',()=>tourAt===TOUR.length-1?closeTour():showStep(tourAt+1));
+addEventListener('resize',placeTour);
+addEventListener('scroll',placeTour,{passive:true});
+addEventListener('keydown',e=>{
+  if(tourAt<0)return;
+  if(e.key==='Escape')closeTour();
+  if(e.key==='Tab'){
+    const b=[...$('tourCard').querySelectorAll('button')].filter(x=>!x.hidden),i=b.indexOf(document.activeElement);
+    e.preventDefault();b[(i+(e.shiftKey?-1:1)+b.length)%b.length].focus();
+  }
+});
+
+currencies();fillCats();
+$('wCcy').value=known(state.ccy)?state.ccy:'USD';
+$('txCcy').value=known(state.ccy)?state.ccy:'USD';
+$('txDate').value=new Date().toISOString().slice(0,10);
+show();refreshRates();
+</script>
+</body>
+</html>

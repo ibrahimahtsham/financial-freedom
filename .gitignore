@@ -1,0 +1,12 @@
+# Personal financial data: never commit
+private/
+*.csv
+*.pdf
+my-plan*.json
+financial-freedom-plan-*.json
+
+# System and tooling
+.DS_Store
+Thumbs.db
+desktop.ini
+node_modules/
