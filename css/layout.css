@@ -1,0 +1,92 @@
+/* Page structure: welcome screen, tabs, views and the phone summary bar. */
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+.page {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 16px max(16px, env(safe-area-inset-right, 0px)) 64px max(16px, env(safe-area-inset-left, 0px));
+}
+
+.welcome { max-width: 520px; margin-top: 6vh; display: grid; gap: 20px; }
+
+.tabs {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  gap: 4px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+.tabs button {
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  padding: 10px 14px;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+
+.view { display: grid; grid-template-columns: minmax(0, 1fr); gap: 36px; min-width: 0; }
+
+h1 {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: clamp(30px, 5vw, 50px);
+  line-height: 1.08;
+  margin: 0;
+  max-width: 20em;
+  text-wrap: balance;
+  letter-spacing: -0.01em;
+}
+h2 { font-family: var(--display); font-weight: 500; font-size: 25px; line-height: 1.2; margin: 0 0 12px; }
+h3 { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
+
+.lede { font-size: 17px; margin: 12px 0 0; max-width: 62ch; color: var(--muted); }
+.note { font-size: 14px; color: var(--muted); margin: 12px 0 0; max-width: 68ch; }
+.note:empty { display: none; }
+.note.intro { margin: 0 0 12px; }
+.hint { font-size: 12.5px; color: var(--muted); margin: 0; }
+.hint:empty { display: none; }
+.err { color: var(--goal); font-size: 13.5px; margin: 0; font-weight: 500; }
+.gap { margin-top: 16px; }
+
+.ridge { display: block; width: 100%; height: auto; margin-top: 12px; }
+.ridge .r1 { fill: var(--ridge1); }
+.ridge .r2 { fill: var(--ridge2); }
+.ridge .r3, .ridge .home { fill: var(--ridge3); }
+.ridge .you { fill: var(--marker); stroke: var(--bg); stroke-width: 3; }
+.progress { margin: 8px 0 0; font-weight: 500; }
+
+.dock { display: none; }
+
+@media (max-width: 720px) {
+  .page { padding-bottom: 96px; }
+  .dock {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--fg);
+    color: var(--bg);
+    padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+    font-weight: 500;
+    z-index: 5;
+  }
+}

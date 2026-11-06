@@ -1,0 +1,24 @@
+/* Colours and fonts, with separate light and dark values. */
+:root {
+  --bg: #e8efec; --surface: #f8faf9; --fg: #1b2a27; --muted: #526661; --line: #cfdbd6;
+  --accent: #2a6b58; --accent-soft: #d3e4dd; --goal: #a4561d;
+  --ridge1: #c6d8d2; --ridge2: #9dbcb2; --ridge3: #3f7a68; --marker: #a4561d;
+  --display: "Newsreader", Georgia, serif;
+  --body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121a18; --surface: #1a2421; --fg: #e4ece9; --muted: #9db0aa; --line: #2e3d38;
+    --accent: #7cc7ad; --accent-soft: #21382f; --goal: #eba46c;
+    --ridge1: #22332e; --ridge2: #2d4a41; --ridge3: #4a8571; --marker: #eba46c;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #121a18; --surface: #1a2421; --fg: #e4ece9; --muted: #9db0aa; --line: #2e3d38;
+  --accent: #7cc7ad; --accent-soft: #21382f; --goal: #eba46c;
+  --ridge1: #22332e; --ridge2: #2d4a41; --ridge3: #4a8571; --marker: #eba46c;
+  color-scheme: dark;
+}
