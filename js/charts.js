@@ -107,45 +107,54 @@ let growthView = null;
 function drawGrowth(m) {
   const box = $('chart');
   if (!m || !box.parentElement.clientWidth) return;
-  const { points, goalUsd } = m;
+  const { points, past, from, to, yearNow, goalUsd, real } = m;
   const u = unit();
   const W = chartWidth(box), H = W < 480 ? 240 : 380, L = 52, R = 24, T = 14, B = 26;
-  const maxX = points[points.length - 1].y;
   const goal = goalUsd * u;
+  const highest = Math.max(points[0].mid, ...past.map(p => p.mid)) * u;
   // The goal sets the height. Anything past it runs off the top rather than squashing the chart.
-  const top = goal > 0 ? Math.max(goal, points[0].mid * u) * 1.15 : Math.max(points[points.length - 1].mid * u * 1.05, 1);
-  const x = t => L + (t / maxX) * (W - L - R);
+  const top = goal > 0 ? Math.max(goal, highest) * 1.15 : Math.max(points[points.length - 1].mid * u * 1.05, 1);
+  const x = t => L + ((t - from) / (to - from)) * (W - L - R);
   const y = v => T + (1 - (v * u) / top) * (H - T - B);
   const yv = v => T + (1 - v / top) * (H - T - B);
+  const line = (rows, key, attrs) => `<polyline points="${rows.map(p => `${x(p.y)},${y(p[key])}`).join(' ')}" fill="none" stroke-width="2" stroke-linejoin="round" ${attrs}/>`;
   let o = yGrid(yv, top, 4, L, W - R);
-  const year = new Date().getFullYear();
   const every = W < 480 ? 20 : 10;
-  const first = state.born ? year - state.born : year;   // ticks land on round ages or round years
-  for (let t = (every - (first % every)) % every; t <= maxX; t += every) o += `<text x="${x(t)}" y="${H - 6}" text-anchor="middle">${state.born ? `Age ${first + t}` : first + t}</text>`;
+  const base = state.born ?? 0;   // ticks land on round ages or round years
+  const firstTick = Math.ceil((yearNow + from - base) / every) * every;
+  for (let v = firstTick; v + base <= yearNow + to + 0.01; v += every) o += `<text x="${x(v + base - yearNow)}" y="${H - 6}" text-anchor="middle">${state.born ? `Age ${v}` : v}</text>`;
   o += `<clipPath id="plot"><rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}"/></clipPath><g clip-path="url(#plot)">`;
   const band = points.map(p => `${x(p.y)},${y(p.hi)}`).concat(points.slice().reverse().map(p => `${x(p.y)},${y(p.lo)}`)).join(' ');
   o += `<polygon points="${band}" fill="var(--accent-soft)"/>`;
   if (goalUsd > 0) o += `<line x1="${L}" x2="${W - R}" y1="${y(goalUsd)}" y2="${y(goalUsd)}" stroke="var(--out)" stroke-width="2" stroke-dasharray="5 4"/><text class="goalt" x="${L + 6}" y="${y(goalUsd) + 16}">Goal: ${money(goalUsd)}</text>`;
-  o += `<polyline points="${points.map(p => `${x(p.y)},${y(p.mid)}`).join(' ')}" fill="none" stroke="var(--in)" stroke-width="2" stroke-linejoin="round"/></g>`;
-  o += `<line id="cross" y1="${T}" y2="${H - B}" stroke="var(--muted)" visibility="hidden"/><circle id="dot" r="5" fill="var(--in)" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>`;
+  if (from < 0) o += `<line x1="${x(0)}" x2="${x(0)}" y1="${T}" y2="${H - B}" stroke="var(--line)"/><text x="${x(0) + 6}" y="${H - B - 6}">Today</text>`;
+  if (real) o += line(points, 'real', 'stroke="var(--muted)" stroke-dasharray="2 4"');
+  o += line(points, 'mid', 'stroke="var(--in)"');
+  if (past.length) o += line(past, 'mid', 'stroke="var(--fg)"');
+  o += `</g><line id="cross" y1="${T}" y2="${H - B}" stroke="var(--muted)" visibility="hidden"/><circle id="dot" r="5" fill="var(--in)" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>`;
   setChart(box, W, H, o);
-  growthView = { points, x, y: v => Math.max(T, y(v)), W };
+  const stops = [...past, ...points.filter(p => p.y <= to && (p.y > 0 || !past.length))];
+  growthView = { stops, x, y: v => Math.max(T, y(v)), W };
 }
 
 function growthHover(e) {
   if (!growthView) return;
-  const { points, x, y, W } = growthView;
+  const { stops, x, y, W } = growthView;
   const rect = $('chart').getBoundingClientRect();
   const px = ((e.clientX - rect.left) / rect.width) * W;
-  let p = points[0];
-  for (const q of points) if (Math.abs(x(q.y) - px) < Math.abs(x(p.y) - px)) p = q;
+  let p = stops[0];
+  for (const q of stops) if (Math.abs(x(q.y) - px) < Math.abs(x(p.y) - px)) p = q;
   $('cross').setAttribute('x1', x(p.y));
   $('cross').setAttribute('x2', x(p.y));
   $('cross').setAttribute('visibility', 'visible');
   $('dot').setAttribute('cx', x(p.y));
   $('dot').setAttribute('cy', y(p.mid));
   $('dot').setAttribute('visibility', 'visible');
-  showTip(`${state.born ? `Age ${ageIn(p.y * 12)}, ` : ''}${new Date().getFullYear() + p.y}\nSavings: ${money(p.mid)}\nPays you: ${money((p.mid / Engine.FREEDOM_MULTIPLE) / 12)} a month`, e.clientX, e.clientY);
+  const age = months => (state.born ? `Age ${ageIn(months)}, ` : '');
+  const text = p.k
+    ? `${age(Math.round(p.y * 12))}${monthName(p.k)}\nYou had: ${money(p.mid)}`
+    : `${age(p.y * 12)}${new Date().getFullYear() + p.y}\nSavings: ${money(p.mid)}\nPays you: ${money((p.mid / Engine.FREEDOM_MULTIPLE) / 12)} a month`;
+  showTip(text, e.clientX, e.clientY);
 }
 
 function growthLeave() {

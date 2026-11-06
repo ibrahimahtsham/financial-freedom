@@ -2,6 +2,32 @@
 const TAKE_YEARS = [5, 10, 15, 20, 30];
 const YEARS_AHEAD = Engine.MAX_MONTHS / 12;
 const LAST_AGE = 100;   // with a birth year, the timeline ends here
+const TRACK_MONTHS = 6;   // how far back we look to see how much you really save
+
+// What you had at the end of each month, from your first item up to today.
+function savingsHistory() {
+  const flows = {};
+  for (const x of ledger) {
+    const k = x.d.slice(0, 7);
+    flows[k] = (flows[k] || 0) + (x.t === 'income' ? usdOf(x) : -usdOf(x));
+  }
+  const first = Object.keys(flows).sort()[0];
+  if (!first) return [];
+  const rows = [];
+  let run = 0;
+  for (let k = first; k <= thisMonth(); k = Engine.addMonths(k, 1)) {
+    run += flows[k] || 0;
+    rows.push({ k, usd: Math.max(0, run), net: flows[k] || 0 });
+  }
+  return rows;
+}
+
+// How much you really saved a month lately, counting only finished months.
+function realSaving(history) {
+  const keys = new Set(fullMonths(TRACK_MONTHS));
+  const rows = history.filter(r => keys.has(r.k));
+  return rows.length >= 2 ? { months: rows.length, save: rows.reduce((sum, r) => sum + r.net, 0) / rows.length } : null;
+}
 let freedomView = null;
 
 function buildFreedom() {
@@ -16,12 +42,21 @@ function buildFreedom() {
   const hi = state.ret + RETURN_SPREAD;
   const hitLo = Engine.project({ ...input, ret: lo }).hit;
   const hitHi = Engine.project({ ...input, ret: hi }).hit;
-  const span = state.born ? Math.max(5, LAST_AGE - (new Date().getFullYear() - state.born)) : YEARS_AHEAD;
+  const now = new Date();
+  const yearNow = now.getFullYear() + now.getMonth() / 12;
+  const history = savingsHistory();
+  const past = history.map(r => ({ y: -Engine.monthsBetween(r.k, thisMonth()) / 12, mid: r.usd, k: r.k }));
+  const from = state.born ? state.born - yearNow : past[0]?.y ?? 0;
+  const to = state.born ? Math.max(5, state.born + LAST_AGE - yearNow) : YEARS_AHEAD;
+  const span = Math.ceil(to);
   const run = ret => Engine.project({ cur, save, ret, months: span * 12 }).series;
   const [mid, low, high] = [run(state.ret), run(lo), run(hi)];
-  const points = Array.from({ length: span + 1 }, (_, y) => ({ y, mid: mid[y * 12], lo: low[y * 12], hi: high[y * 12] }));
+  const real = goalUsd > 0 && save > 0 && hit !== 0 ? realSaving(history) : null;
+  const realRun = real ? Engine.project({ cur, save: real.save, ret: state.ret, months: span * 12 }).series : [];
+  const points = Array.from({ length: span + 1 }, (_, y) => ({ y, mid: mid[y * 12], lo: low[y * 12], hi: high[y * 12], real: realRun[y * 12] }));
+  const realHit = real ? Engine.project({ ...input, save: real.save, ret: state.ret }).hit : null;
   const spendNow = t.has ? t.spend : live;
-  return { t, cur, live, save, goalUsd, hit, lo, hi, hitLo, hitHi, points, spendNow, runway: Engine.runway(cur, spendNow) };
+  return { t, cur, live, save, goalUsd, hit, lo, hi, hitLo, hitHi, points, past, from, to, yearNow, real, realHit, spendNow, runway: Engine.runway(cur, spendNow) };
 }
 
 const orTooLong = m => (m === null ? `over ${YEARS_AHEAD} years` : duration(m));
@@ -38,6 +73,21 @@ function renderTake(f) {
     return `<tr class="${mine ? 'me' : ''}"><td>${y} years, by ${year}${state.born ? ` (age ${year - state.born})` : ''}</td><td class="num-col">${money(need)}</td><td class="num-col">${money(spendNow)}</td><td class="num-col amt">${money(need + spendNow)}</td><td class="acts">${mine ? 'Your plan' : `<button type="button" data-save="${need}">Use this</button>`}</td></tr>`;
   }).join('');
   $('takeTable').innerHTML = `<thead><tr><th>To get there in</th><th class="num-col">Save a month</th><th class="num-col">Spend a month</th><th class="num-col">Get paid a month</th><th></th></tr></thead><tbody>${rows}</tbody>`;
+}
+
+function renderTrack(f) {
+  const { real, realHit, save } = f;
+  $('track').hidden = !real;
+  $('lgReal').hidden = !real;
+  $('lgPast').hidden = !f.past.length;
+  if (!real) return;
+  const on = real.save >= save;
+  const saved = real.save > 0
+    ? `You saved ${money(real.save)} a month over the last ${real.months} months`
+    : `Over the last ${real.months} months you spent more than you got`;
+  const goes = realHit === null ? 'At your real speed you would not reach your goal.' : `At your real speed you get there around ${dateIn(realHit)}${atAge(realHit)}.`;
+  $('track').className = `track ${on ? 'on' : 'off'}`;
+  $('track').innerHTML = `<b>${on ? '✓ On track.' : '! Off track.'}</b> ${saved}, and your plan says ${money(save)}. ${goes}`;
 }
 
 function renderFreedom() {
@@ -118,6 +168,7 @@ function renderFreedom() {
   $('lgMid').textContent = `Growing ${state.ret}% a year`;
   $('lgBand').textContent = `If it grows ${f.lo}% to ${f.hi}%`;
   renderTake(f);
+  renderTrack(f);
   freedomView = f;
   drawGrowth(f);
 }

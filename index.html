@@ -265,12 +265,15 @@
           <div class="panel-head">
             <h2>Your timeline</h2>
             <div class="legend">
+              <span id="lgPast"><i class="key past"></i>What you really had</span>
               <span><i class="key"></i><span id="lgMid"></span></span>
               <span><i class="key band"></i><span id="lgBand"></span></span>
+              <span id="lgReal"><i class="key real"></i>At your real speed</span>
               <span><i class="key goal"></i>Goal</span>
             </div>
           </div>
-          <div class="chart-wrap" id="growthBox"><svg id="chart" class="chart" role="img" aria-label="Line chart of your savings growing toward your goal, with a shaded area for slower and faster growth"></svg></div>
+          <div class="chart-wrap" id="growthBox"><svg id="chart" class="chart" role="img" aria-label="Line chart of what you really had so far, then your savings growing toward your goal, with a shaded area for slower and faster growth"></svg></div>
+          <p class="track" id="track" role="status" hidden></p>
           <p class="note">All these numbers are in today's prices. They are guesses to help you plan, not advice from a money expert.</p>
         </section>
 

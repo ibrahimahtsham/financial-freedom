@@ -107,6 +107,11 @@ button:disabled { opacity: 0.45; cursor: default; }
 .key.fill.out { background: var(--out); }
 .key.band { height: 10px; border: 0; background: var(--accent-soft); border-radius: 2px; }
 .key.goal { border-top: 2px dashed var(--out); }
+.key.past { border-top-color: var(--fg); }
+.key.real { border-top: 2px dotted var(--muted); }
+.legend [hidden] { display: none; }
+.track { margin: 12px 0 0; padding-left: 12px; border-left: 3px solid var(--in); font-size: 14px; }
+.track.off { border-left-color: var(--out); }
 .chart-wrap { touch-action: pan-y; }
 .chart { display: block; width: 100%; }
 .chart text, .cal text { fill: var(--muted); font-family: var(--body); font-size: 12px; }
