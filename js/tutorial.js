@@ -11,7 +11,9 @@ const TOUR_STEPS = [
   { section: 'Money', tab: 'money', els: ['catOut', 'catIn', 'insights'], t: 'Where your money goes', p: 'What you spent on, biggest first. Things we noticed points out anything useful.', tryIt: 'Try it: click one, like Food. Your money list will show only that. You will see the list in two steps.' },
   { section: 'Money', tab: 'money', els: ['calendar'], t: 'Spending by day', p: 'Each square is a day. Darker means you spent more that day.', tryIt: 'Try it: put your mouse on a square to see that day, or click it to show that day in your money list.' },
   { section: 'Money', tab: 'money', els: ['txSec'], t: 'Your money list', p: 'Every bit of money in or out. You can change what something was for, or make your own type. You can also edit, delete, hide columns, or download the list.', tryIt: 'Try it: click a heading like Amount to sort the list, or search for something.' },
-  { section: 'Money', tab: 'money', els: ['addOpen'], t: 'Add money in or out', p: 'Press this each time you get or spend money. If it was in a different type of money, just pick that type.', tryIt: 'Try it: press Add to see the form, then press Cancel to come back.' },
+
+  { section: 'Add', tab: 'add', els: ['addBox', 'quickPanel'], locked: true, t: 'Add money in or out', p: 'This page is where you write down money you get or spend. It remembers your bank and stays open, so you can add a few in a row. Quick picks add things you buy a lot in one click.' },
+  { section: 'Add', tab: 'add', els: ['checkPanel'], locked: true, t: 'Does it match your bank?', p: 'Now and then, type what your bank really shows. If it doesn\'t match your money list, you forgot to add something, and this tells you how much.' },
 
   { section: 'Freedom', tab: 'freedom', els: ['hero'], t: 'Your goal', p: 'This is how much money you need so it can pay for your life without a job. It is 25 times what you spend in a year.', tryIt: 'Try it: open "See how we worked this out" to see the sum with your own numbers.' },
   { section: 'Freedom', tab: 'freedom', els: ['tileDate', 'tileRun', 'tilePot'], t: 'Where you are now', p: 'When you could reach your goal, how long your savings would last if no money came in, and how much they could pay you already. Each one shows its sum too.' },
@@ -197,9 +199,9 @@ function initTutorial() {
   $('tourSkip').addEventListener('click', closeTour);
   $('tourBack').addEventListener('click', () => showStep(tourAt - 1));
   $('tourNext').addEventListener('click', () => (tourAt === TOUR_STEPS.length - 1 ? closeTour() : showStep(tourAt + 1)));
-  // Blocks clicks outside the highlighted area, but never inside the tour card or a pop-up.
+  // Blocks clicks outside the highlighted area, but never inside the tour card.
   const guard = e => {
-    if (tourAt < 0 || e.detail === 0 || e.target.closest?.('#tourCard, dialog')) return;
+    if (tourAt < 0 || e.detail === 0 || e.target.closest?.('#tourCard')) return;
     const r = tourRect(TOUR_STEPS[tourAt]);
     const pad = 8;
     const inside = r && e.clientX >= r.left - pad && e.clientX <= r.right + pad && e.clientY >= r.top - pad && e.clientY <= r.bottom + pad;

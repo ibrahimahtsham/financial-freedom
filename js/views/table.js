@@ -1,10 +1,9 @@
-// The transactions table, plus adding and editing.
+// The money list on the Money page.
 const TX_PAGE = 25;
 const defaultTxFilter = () => ({ q: '', type: '', cat: '', acct: '', day: '' });
 let txFilter = defaultTxFilter();
 let txSort = { key: 'date', dir: -1 };
 let txPage = 0;
-let editingId = null;
 
 const NEW_CATEGORY = '__new';
 const TX_COLUMNS = [
@@ -65,34 +64,6 @@ function renderColumnMenu() {
   $('colBox').innerHTML = availableColumns().filter(c => !c.fixed).map(c => `<label class="col-pick"><input type="checkbox" data-col="${c.key}"${state.hiddenCols.includes(c.key) ? '' : ' checked'}>${esc(columnName(c))}</label>`).join('');
 }
 
-// Swaps a row's dropdown for a box to name a new category. It saves on Enter or on
-// clicking away, and an empty box or Esc leaves the item as it was.
-function nameCategoryInRow(select, x, t) {
-  const box = document.createElement('input');
-  box.className = 'textin';
-  box.maxLength = 30;
-  box.placeholder = 'Name it';
-  box.setAttribute('aria-label', 'Name for your new one');
-  let done = false;
-  const finish = save => {
-    if (done) return;
-    done = true;
-    const name = save ? categoryName(t, box.value) : '';
-    if (!name) { renderTable(); return; }
-    x.t = t;
-    x.k = name;
-    saveLedger();
-    refreshAll();
-  };
-  box.addEventListener('keydown', e => {
-    if (e.key === 'Enter') finish(true);
-    if (e.key === 'Escape') { e.stopPropagation(); finish(false); }
-  });
-  box.addEventListener('blur', () => finish(true));
-  select.replaceWith(box);
-  box.focus();
-}
-
 function fillFilterSelects() {
   const set = new Set(selectedMonths());
   const inRange = ledger.filter(x => set.has(x.d.slice(0, 7)));
@@ -109,6 +80,31 @@ function fillFilterSelects() {
   $('txAcct').value = txFilter.acct;
   $('txAcct').hidden = accts.length < 2;
   $('acctList').innerHTML = accts.map(a => `<option value="${esc(a)}">`).join('');
+}
+
+// Swaps something for a box to type a name in. It finishes on Enter or on clicking
+// away, and Esc finishes with nothing typed.
+function nameBox(el, value, done) {
+  const box = document.createElement('input');
+  box.className = 'textin';
+  box.maxLength = 30;
+  box.value = value;
+  box.placeholder = 'Name it';
+  box.setAttribute('aria-label', 'Name');
+  let over = false;
+  const finish = text => {
+    if (over) return;
+    over = true;
+    done(text);
+  };
+  box.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); finish(box.value); }
+    if (e.key === 'Escape') { e.stopPropagation(); finish(''); }
+  });
+  box.addEventListener('blur', () => finish(box.value));
+  el.replaceWith(box);
+  box.focus();
+  box.select();
 }
 
 function renderTable() {
@@ -162,36 +158,6 @@ function exportCsv() {
   downloadFile(`transactions-${new Date().toISOString().slice(0, 10)}.csv`, ['Date,Type,What for,Note,Bank says,Bank,Amount,Type of money', ...rows].join('\n'), 'text/csv');
 }
 
-function fillAddCategories(value) {
-  const t = document.querySelector('input[name=txKind]:checked').value;
-  const list = categoryList(t);
-  $('txCat').innerHTML = `${list.map(c => `<option>${esc(c)}</option>`).join('')}<option value="${NEW_CATEGORY}">+ Make my own</option>`;
-  $('txCat').value = value && list.includes(value) ? value : plainCategory(t);
-  showNewCategoryBox();
-}
-
-function showNewCategoryBox() {
-  const on = $('txCat').value === NEW_CATEGORY;
-  $('txCatNew').hidden = !on;
-  if (!on) $('txCatNew').value = '';
-}
-
-function openTxDialog(x) {
-  editingId = x ? x.id : null;
-  $('addTitle').textContent = x ? 'Change this' : 'Add money in or out';
-  $('addSave').textContent = x ? 'Save' : 'Add it';
-  $('txMsg').textContent = '';
-  document.querySelector(`input[name=txKind][value=${x ? x.t : 'expense'}]`).checked = true;
-  fillAddCategories(x?.k);
-  $('txAmount').value = x ? x.a : '';
-  $('txCcy').value = x ? x.c : (knownCurrency(state.ccy) ? state.ccy : 'USD');
-  $('txDate').value = x ? x.d : new Date().toISOString().slice(0, 10);
-  $('txNote').value = x ? x.n : '';
-  $('txSource').value = x ? x.s : '';
-  $('addDialog').showModal();
-  $('txAmount').focus();
-}
-
 function ledgerChanged() {
   saveLedger();
   renderRange();
@@ -199,16 +165,6 @@ function ledgerChanged() {
 }
 
 function initTable() {
-  $('addOpen').addEventListener('click', () => openTxDialog(null));
-  const dialog = $('addDialog');
-  $('addCancel').addEventListener('click', () => dialog.close());
-  dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
-  document.querySelectorAll('input[name=txKind]').forEach(i => i.addEventListener('change', () => fillAddCategories()));
-  $('txCat').addEventListener('change', () => {
-    showNewCategoryBox();
-    if (!$('txCatNew').hidden) $('txCatNew').focus();
-  });
-
   $('colMenu').addEventListener('toggle', renderColumnMenu);
   $('colBox').addEventListener('change', e => {
     const key = e.target.dataset.col;
@@ -218,27 +174,6 @@ function initTable() {
     renderTable();
   });
   document.addEventListener('click', e => { if (!$('colMenu').contains(e.target)) $('colMenu').open = false; });
-
-  $('addBox').addEventListener('submit', e => {
-    e.preventDefault();
-    const a = parseNumber($('txAmount').value);
-    const d = $('txDate').value;
-    if (!(a > 0) || !d) { $('txMsg').textContent = 'Type a date and an amount.'; return; }
-    const t = document.querySelector('input[name=txKind]:checked').value;
-    const k = $('txCat').value === NEW_CATEGORY ? categoryName(t, $('txCatNew').value) : $('txCat').value;
-    if (!k) { $('txMsg').textContent = 'Type a name for your new one.'; $('txCatNew').focus(); return; }
-    const fields = {
-      d, a, c: $('txCcy').value, t,
-      k, n: $('txNote').value.trim().slice(0, 120), s: $('txSource').value.trim().slice(0, 20),
-    };
-    const existing = ledger.find(x => x.id === editingId);
-    if (existing) Object.assign(existing, fields);
-    else ledger.push({ id: ledger.reduce((m, i) => Math.max(m, i.id), 0) + 1, ...fields });
-    dialog.close();
-    ledgerChanged();
-    showInRange(d.slice(0, 7));
-    showToast(existing ? 'Saved.' : 'Added.');
-  });
 
   $('txSearch').addEventListener('input', () => { txFilter.q = $('txSearch').value; txPage = 0; renderTable(); });
   $('txType').addEventListener('change', () => { txFilter.type = $('txType').value; txPage = 0; renderTable(); });
@@ -261,7 +196,17 @@ function initTable() {
     const x = ledger.find(i => i.id === +e.target.closest('tr').dataset.id);
     if (!x) return;
     const [t, ...k] = e.target.value.split('|');
-    if (k.join('|') === NEW_CATEGORY) { nameCategoryInRow(e.target, x, t); return; }
+    if (k.join('|') === NEW_CATEGORY) {
+      nameBox(e.target, '', text => {
+        const name = categoryName(t, text);
+        if (!name) { renderTable(); return; }
+        x.t = t;
+        x.k = name;
+        saveLedger();
+        refreshAll();
+      });
+      return;
+    }
     x.t = t;
     x.k = k.join('|');
     saveLedger();
@@ -272,7 +217,7 @@ function initTable() {
     if (!act) return;
     const x = ledger.find(i => i.id === +e.target.closest('tr').dataset.id);
     if (!x) return;
-    if (act === 'edit') { openTxDialog(x); return; }
+    if (act === 'edit') { startEdit(x); return; }
     ledger = ledger.filter(i => i !== x);
     ledgerChanged();
     showToast('Deleted.', () => {

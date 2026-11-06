@@ -9,6 +9,7 @@ Double-click `index.html`. Your numbers stay in that browser, so use **Menu > Sa
 ## How it works
 
 - **Money:** what came in, what went out, and where it went, in any currency and optionally in today's prices.
+- **Add:** write down money in or out, with quick picks, a check against your bank, and renaming.
 - **Freedom:** your goal, when you could reach it and how long your savings last, each with its sum.
 
 Each transaction keeps its own currency. Totals convert at today's rate, and today's prices apply each currency's own yearly inflation first.
@@ -31,7 +32,7 @@ js/
   format.js       Display and currency helpers
   charts.js       SVG charts
   range.js        Timeline slider
-  views/          Money dashboard, transactions table, Freedom
+  views/          Money dashboard, money list, Add page, Freedom
   tutorial.js     First-run walkthrough
   app.js          Startup and tab switching
 tests/            Tests for the planning maths

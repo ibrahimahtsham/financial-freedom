@@ -1,5 +1,5 @@
 // Starts the app, and handles tabs, the top bar and saving files.
-const TABS = ['money', 'freedom'];
+const TABS = ['money', 'add', 'freedom'];
 let activeTab = 'money';
 
 function currencyOptions() {
@@ -36,13 +36,13 @@ function refreshAll() {
   renderRateNote();
   renderFreedom();
   renderMoney();
+  renderAdd();
 }
 
 function moneyControls() {
   const hide = activeTab !== 'money' || !ledger.length;
   $('realWrap').hidden = hide;
   $('rangeBox').hidden = hide;
-  $('addOpen').hidden = activeTab !== 'money';
 }
 
 function showTab(name) {
@@ -57,7 +57,7 @@ function showTab(name) {
   writeStored(TAB_KEY, activeTab);
   if (location.hash !== `#${activeTab}`) history.replaceState(null, '', `#${activeTab}`);
   moneyControls();
-  if (state.started) (activeTab === 'money' ? renderMoney : renderFreedom)();
+  if (state.started) ({ money: renderMoney, add: openAddPage, freedom: renderFreedom })[activeTab]();
 }
 
 function showApp() {
@@ -174,7 +174,6 @@ function initTopBar() {
 
   $('ccy').addEventListener('change', () => {
     state.ccy = $('ccy').value;
-    $('txCcy').value = state.ccy;
     refreshAll();
   });
   document.querySelectorAll('input[name=priceView]').forEach(i => i.addEventListener('change', () => {
@@ -220,6 +219,7 @@ function boot() {
   initCharts();
   initRange();
   initTable();
+  initAdd();
   initMoney();
   initFreedom();
   initTutorial();
@@ -228,9 +228,7 @@ function boot() {
   currencyOptions();
   const start = knownCurrency(state.ccy) ? state.ccy : 'USD';
   $('wCcy').value = start;
-  $('txCcy').value = start;
-  $('txDate').value = new Date().toISOString().slice(0, 10);
-  fillAddCategories();
+  clearForm();
   const hash = location.hash.slice(1);
   activeTab = TABS.includes(hash) ? hash : readStored(TAB_KEY, ledger.length ? 'money' : 'freedom');
   let width = 0;

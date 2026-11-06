@@ -36,6 +36,7 @@
       <div class="brand"><img src="assets/favicon.svg" alt="" width="22" height="22"><span>Financial Freedom</span></div>
       <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
         <button type="button" role="tab" id="tab-money" data-tab="money" aria-controls="view-money">Money</button>
+        <button type="button" role="tab" id="tab-add" data-tab="add" aria-controls="view-add">Add</button>
         <button type="button" role="tab" id="tab-freedom" data-tab="freedom" aria-controls="view-freedom">Freedom</button>
       </nav>
       <div class="controls">
@@ -44,7 +45,6 @@
           <label title="Prices go up over time. This shows what old spending would cost now"><input type="radio" name="priceView" value="today"><span>Today's prices</span></label>
         </div>
         <select id="ccy" aria-label="Show everything in this type of money"></select>
-        <button type="button" class="primary" id="addOpen">Add</button>
         <details class="menu" id="menu">
           <summary aria-label="Menu">Menu</summary>
           <div class="menu-box stack" id="menuBox">
@@ -79,7 +79,7 @@
     <section class="view" id="view-money" role="tabpanel" aria-labelledby="tab-money">
       <div class="panel" id="moneyEmpty">
         <h2>Start tracking</h2>
-        <p class="note">Press Add to write down money you got or spent. This page fills up from there.</p>
+        <p class="note">Go to the Add page to write down money you got or spent. This page fills up from there.</p>
       </div>
 
       <div class="grid" id="moneyFull">
@@ -160,6 +160,64 @@
       </div>
     </section>
 
+    <section class="view" id="view-add" role="tabpanel" aria-labelledby="tab-add" hidden>
+      <div class="grid">
+        <section class="panel c7">
+          <form id="addBox" autocomplete="off" novalidate>
+            <h2 id="addTitle">Add money in or out</h2>
+            <div class="addgrid">
+              <div class="seg wide" role="radiogroup" aria-label="Money in or out">
+                <label><input type="radio" name="txKind" value="expense" checked><span>Money out</span></label>
+                <label><input type="radio" name="txKind" value="income"><span>Money in</span></label>
+              </div>
+              <div class="pick"><label for="txAmount">Amount</label><input class="textin" id="txAmount" type="text" inputmode="decimal"></div>
+              <div class="pick"><label for="txCcy">Type of money</label><select id="txCcy"></select></div>
+              <div class="pick"><label for="txCat">What for</label><select id="txCat"></select><input class="textin" id="txCatNew" type="text" maxlength="30" placeholder="Name it" aria-label="Name for your new one" hidden></div>
+              <div class="pick"><label for="txDate">Date</label><input class="textin" id="txDate" type="date"></div>
+              <div class="pick"><label for="txNote">Note</label><input class="textin" id="txNote" type="text" maxlength="120"></div>
+              <div class="pick"><label for="txSource">Bank or wallet</label><input class="textin" id="txSource" type="text" maxlength="20" list="acctList"><datalist id="acctList"></datalist></div>
+              <label class="col-pick wide" id="quickRow"><input type="checkbox" id="txQuick">Also make this a quick pick</label>
+              <p class="hint wide" id="txMsg" role="status"></p>
+              <div class="wide actions"><button type="button" id="addCancel" hidden>Cancel</button><button type="submit" class="primary" id="addSave">Add it</button></div>
+            </div>
+          </form>
+        </section>
+
+        <div class="c5 stack">
+          <section class="panel stack" id="quickPanel">
+            <h2>Quick picks</h2>
+            <div class="quicks" id="quickList"></div>
+            <p class="hint" id="quickHint"></p>
+          </section>
+          <section class="panel stack">
+            <h2>Latest</h2>
+            <ul class="latest" id="latestList"></ul>
+          </section>
+        </div>
+
+        <section class="panel c5 stack" id="checkPanel">
+          <h2>Does it match your bank?</h2>
+          <p class="note">Type what your bank really shows. If it doesn't match, you forgot to add something.</p>
+          <div class="addgrid">
+            <div class="pick"><label for="chkBank">Which bank</label><select id="chkBank"></select></div>
+            <div class="pick"><label for="chkReal" id="chkLabel">What your bank shows</label><input class="textin" id="chkReal" type="text" inputmode="decimal"></div>
+          </div>
+          <p class="hint" id="chkApp"></p>
+          <p id="chkResult" role="status" hidden></p>
+          <button type="button" class="start" id="chkFix" hidden>Add the missing amount</button>
+        </section>
+
+        <section class="panel c7 stack" id="renamePanel">
+          <h2>Rename what things are for</h2>
+          <p class="note">Rename one and everything using it changes too. Use a name you already have to join two together.</p>
+          <div class="ren-cols">
+            <div><h3>Money out</h3><ul class="ren" id="renOut"></ul></div>
+            <div><h3>Money in</h3><ul class="ren" id="renIn"></ul></div>
+          </div>
+        </section>
+      </div>
+    </section>
+
     <section class="view" id="view-freedom" role="tabpanel" aria-labelledby="tab-freedom" hidden>
       <div class="grid">
         <header class="hero c12">
@@ -225,26 +283,6 @@
   </main>
 </div>
 
-<dialog id="addDialog" aria-labelledby="addTitle">
-  <form id="addBox" autocomplete="off" novalidate>
-    <h2 id="addTitle">Add money in or out</h2>
-    <div class="addgrid">
-      <div class="seg wide" role="radiogroup" aria-label="Money in or out">
-        <label><input type="radio" name="txKind" value="expense" checked><span>Money out</span></label>
-        <label><input type="radio" name="txKind" value="income"><span>Money in</span></label>
-      </div>
-      <div class="pick"><label for="txAmount">Amount</label><input class="textin" id="txAmount" type="text" inputmode="decimal"></div>
-      <div class="pick"><label for="txCcy">Type of money</label><select id="txCcy"></select></div>
-      <div class="pick"><label for="txCat">What for</label><select id="txCat"></select><input class="textin" id="txCatNew" type="text" maxlength="30" placeholder="Name it" aria-label="Name for your new one" hidden></div>
-      <div class="pick"><label for="txDate">Date</label><input class="textin" id="txDate" type="date"></div>
-      <div class="pick"><label for="txNote">Note</label><input class="textin" id="txNote" type="text" maxlength="120"></div>
-      <div class="pick"><label for="txSource">Bank or wallet</label><input class="textin" id="txSource" type="text" maxlength="20" list="acctList"><datalist id="acctList"></datalist></div>
-      <p class="hint wide" id="txMsg" role="status"></p>
-      <div class="wide actions"><button type="button" id="addCancel">Cancel</button><button type="submit" class="primary" id="addSave">Add it</button></div>
-    </div>
-  </form>
-</dialog>
-
 <div class="tip" id="hoverTip" hidden></div>
 <div class="toast" id="toast" role="status" hidden><span id="toastText"></span><button type="button" class="link" id="toastUndo" hidden>Undo</button></div>
 <input type="file" id="planFile" accept=".json,application/json" hidden>
@@ -274,6 +312,7 @@
 <script src="js/charts.js"></script>
 <script src="js/range.js"></script>
 <script src="js/views/table.js"></script>
+<script src="js/views/add.js"></script>
 <script src="js/views/money.js"></script>
 <script src="js/views/freedom.js"></script>
 <script src="js/tutorial.js"></script>

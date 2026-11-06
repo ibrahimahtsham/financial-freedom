@@ -1,0 +1,252 @@
+// Add page: the form, quick picks, latest items, the bank check and renaming.
+let editingId = null;
+let editReturn = null;   // where to go back to after changing an item
+
+const todayDate = () => new Date().toISOString().slice(0, 10);
+const chosenKind = () => document.querySelector('input[name=txKind]:checked').value;
+const setKind = t => { document.querySelector(`input[name=txKind][value=${t}]`).checked = true; };
+const exactMoney = (c, v) => `${v < 0 ? '-' : ''}${c} ${Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+
+function fillAddCategories(value) {
+  const list = categoryList(chosenKind());
+  $('txCat').innerHTML = `${list.map(c => `<option>${esc(c)}</option>`).join('')}<option value="${NEW_CATEGORY}">+ Make my own</option>`;
+  $('txCat').value = value && list.includes(value) ? value : plainCategory(chosenKind());
+  showNewCategoryBox();
+}
+
+function showNewCategoryBox() {
+  const on = $('txCat').value === NEW_CATEGORY;
+  $('txCatNew').hidden = !on;
+  if (!on) $('txCatNew').value = '';
+}
+
+function setEditing(id) {
+  editingId = id;
+  $('addTitle').textContent = id === null ? 'Add money in or out' : 'Change this';
+  $('addSave').textContent = id === null ? 'Add it' : 'Save';
+  $('addCancel').hidden = id === null;
+  $('quickRow').hidden = id !== null;
+  $('txMsg').textContent = '';
+}
+
+// Empties the form for the next item, keeping the last bank and type of money.
+function clearForm(keepDate) {
+  setEditing(null);
+  fillAddCategories();
+  const c = [state.last.c, state.ccy].find(knownCurrency) || 'USD';
+  $('txAmount').value = '';
+  $('txCcy').value = c;
+  if (!keepDate || !$('txDate').value) $('txDate').value = todayDate();
+  $('txNote').value = '';
+  $('txSource').value = state.last.s;
+  $('txQuick').checked = false;
+}
+
+function focusAmount() {
+  if (tourAt < 0 && matchMedia('(hover: hover)').matches) $('txAmount').focus({ preventScroll: true });
+}
+
+function startEdit(x) {
+  editReturn = { tab: activeTab, y: scrollY };
+  setEditing(x.id);
+  setKind(x.t);
+  fillAddCategories(x.k);
+  $('txAmount').value = x.a;
+  $('txCcy').value = x.c;
+  $('txDate').value = x.d;
+  $('txNote').value = x.n;
+  $('txSource').value = x.s;
+  showTab('add');
+  scrollTo(0, 0);
+}
+
+function finishEdit() {
+  const back = editReturn;
+  editReturn = null;
+  setKind('expense');
+  clearForm();
+  showTab(back.tab);
+  scrollTo(0, back.y);
+}
+
+function addItem(fields) {
+  const item = { id: ledger.reduce((m, i) => Math.max(m, i.id), 0) + 1, ...fields };
+  ledger.push(item);
+  state.last = { c: fields.c, s: fields.s };
+  ledgerChanged();
+  showInRange(fields.d.slice(0, 7));
+  showToast(`Added ${fields.n || fields.k}.`, () => {
+    ledger = ledger.filter(i => i !== item);
+    ledgerChanged();
+  });
+}
+
+const quickLabel = q => `${q.n || q.k}, ${exactMoney(q.c, q.a)}`;
+
+function renderQuick() {
+  $('quickList').innerHTML = state.quick.map((q, i) => `<span class="quick"><button type="button" data-quick="${i}">${esc(quickLabel(q))}</button><button type="button" class="x" data-drop="${i}" aria-label="Remove ${esc(q.n || q.k)}">×</button></span>`).join('');
+  $('quickHint').textContent = state.quick.length
+    ? 'One click adds it for the date in the form.'
+    : 'Add something you buy a lot and tick "Also make this a quick pick". Then it only takes one click.';
+}
+
+function renderLatest() {
+  const latest = [...ledger].sort((a, b) => (a.d < b.d ? 1 : a.d > b.d ? -1 : b.id - a.id)).slice(0, 5);
+  $('latestList').innerHTML = latest.length ? latest.map(x => `<li><span class="what">${esc(x.n) || esc(x.k)}<small>${dayName(x.d)}, ${esc(x.k)}</small></span><span class="amt${x.t === 'income' ? ' pos' : ''}">${x.t === 'income' ? '+' : '-'}${esc(exactMoney(x.c, x.a))}</span><button type="button" class="x" data-edit="${x.id}">Edit</button></li>`).join('') : '<li class="hint">Nothing yet.</li>';
+}
+
+// Renaming Other would sweep up everything unsorted, and renaming the two below
+// would quietly start counting them as spending.
+const canRename = (t, k) => k !== plainCategory(t) && !NOT_LIVING_COSTS.includes(k);
+
+function renderRenames() {
+  const list = (t, id) => {
+    const counts = {};
+    for (const x of ledger) if (x.t === t) counts[x.k] = (counts[x.k] || 0) + 1;
+    const rows = categoryList(t).filter(k => counts[k] && canRename(t, k));
+    $(id).innerHTML = rows.length
+      ? rows.map(k => `<li><span class="ren-name">${esc(k)}</span><small>${fmt(counts[k])}</small><button type="button" class="x" data-ren="${t}|${esc(k)}">Rename</button></li>`).join('')
+      : '<li class="hint">Nothing to rename yet.</li>';
+  };
+  list('expense', 'renOut');
+  list('income', 'renIn');
+}
+
+function renameCategory(t, from, typed) {
+  const clean = typed.trim().replace(/\s+/g, ' ').slice(0, 30);
+  const to = clean.toLowerCase() === from.toLowerCase() ? clean : categoryName(t, clean);
+  if (!to || to === from) { renderRenames(); return; }
+  const items = ledger.filter(x => x.t === t && x.k === from);
+  const picks = state.quick.filter(q => q.t === t && q.k === from);
+  const move = k => {
+    [...items, ...picks].forEach(x => { x.k = k; });
+    txFilter.cat = '';
+    ledgerChanged();
+  };
+  move(to);
+  showToast(`Renamed to ${to}.`, () => move(from));
+}
+
+// What the app thinks is in one bank, in that bank's main type of money.
+function appHolds(bank) {
+  const items = bank ? ledger.filter(x => x.s === bank) : ledger;
+  const uses = {};
+  for (const x of items) uses[x.c] = (uses[x.c] || 0) + 1;
+  const c = bank ? Object.keys(uses).sort((a, b) => uses[b] - uses[a])[0] : state.ccy;
+  const rate = knownCurrency(c) ? rates.r[c] : 1;
+  const total = items.reduce((sum, x) => sum + (x.t === 'income' ? 1 : -1) * usdOf(x) * rate, 0);
+  return { c, total: Math.round(total * 100) / 100 };
+}
+
+function renderCheck() {
+  const banks = [...new Set(ledger.map(x => x.s).filter(Boolean))].sort();
+  const chosen = $('chkBank').value;
+  $('chkBank').innerHTML = `${banks.map(b => `<option>${esc(b)}</option>`).join('')}<option value="">All my money</option>`;
+  $('chkBank').value = banks.includes(chosen) || (chosen === '' && $('chkBank').dataset.ready) ? chosen : (banks[0] ?? '');
+  $('chkBank').dataset.ready = '1';
+  const { c, total } = appHolds($('chkBank').value);
+  const real = parseNumber($('chkReal').value);
+  const diff = Math.round((real - total) * 100) / 100;
+  $('chkApp').textContent = `Your money list says ${exactMoney(c, total)}.`;
+  $('chkLabel').textContent = `What your bank shows (${c})`;
+  const has = Number.isFinite(real);
+  const off = has && Math.abs(diff) >= 0.5;
+  $('chkResult').hidden = !has;
+  $('chkFix').hidden = !off;
+  if (!has) return;
+  $('chkResult').textContent = !off ? 'It matches.'
+    : diff < 0 ? `Your bank has ${exactMoney(c, -diff)} less, so you probably forgot some spending.`
+      : `Your bank has ${exactMoney(c, diff)} more, so you probably forgot some money coming in.`;
+}
+
+function fillMissing() {
+  const bank = $('chkBank').value;
+  const { c, total } = appHolds(bank);
+  const diff = parseNumber($('chkReal').value) - total;
+  clearForm(true);
+  setKind(diff > 0 ? 'income' : 'expense');
+  fillAddCategories();
+  $('txAmount').value = Math.round(Math.abs(diff) * 100) / 100;
+  $('txCcy').value = c;
+  $('txSource').value = bank;
+  $('txNote').value = 'To match my bank';
+  scrollTo(0, 0);
+  focusAmount();
+}
+
+function renderAdd() {
+  renderQuick();
+  renderLatest();
+  renderRenames();
+  renderCheck();
+}
+
+function openAddPage() {
+  if (editingId === null && !$('txAmount').value) clearForm(true);
+  renderAdd();
+  focusAmount();
+}
+
+function initAdd() {
+  document.querySelectorAll('input[name=txKind]').forEach(i => i.addEventListener('change', () => fillAddCategories()));
+  $('txCat').addEventListener('change', () => {
+    showNewCategoryBox();
+    if (!$('txCatNew').hidden) $('txCatNew').focus();
+  });
+  $('addCancel').addEventListener('click', finishEdit);
+
+  $('addBox').addEventListener('submit', e => {
+    e.preventDefault();
+    const a = parseNumber($('txAmount').value);
+    const d = $('txDate').value;
+    if (!(a > 0) || !d) { $('txMsg').textContent = 'Type a date and an amount.'; return; }
+    const t = chosenKind();
+    const k = $('txCat').value === NEW_CATEGORY ? categoryName(t, $('txCatNew').value) : $('txCat').value;
+    if (!k) { $('txMsg').textContent = 'Type a name for your new one.'; $('txCatNew').focus(); return; }
+    const fields = { d, a, c: $('txCcy').value, t, k, n: $('txNote').value.trim().slice(0, 120), s: $('txSource').value.trim().slice(0, 20) };
+    const existing = ledger.find(x => x.id === editingId);
+    if (existing) {
+      Object.assign(existing, fields);
+      ledgerChanged();
+      showInRange(d.slice(0, 7));
+      finishEdit();
+      showToast('Saved.');
+      return;
+    }
+    if ($('txQuick').checked) {
+      const { d: day, ...pick } = fields;
+      state.quick = [...state.quick, pick].slice(-12);
+    }
+    addItem(fields);
+    clearForm(true);
+    focusAmount();
+  });
+
+  $('quickList').addEventListener('click', e => {
+    const { quick, drop } = e.target.dataset;
+    if (drop) {
+      state.quick = state.quick.filter((_, i) => i !== +drop);
+      saveState();
+      renderQuick();
+    }
+    if (quick) addItem({ ...state.quick[+quick], d: $('txDate').value || todayDate() });
+  });
+
+  $('latestList').addEventListener('click', e => {
+    const x = ledger.find(i => i.id === +e.target.dataset.edit);
+    if (x) startEdit(x);
+  });
+
+  const rename = e => {
+    if (!e.target.dataset.ren) return;
+    const [t, ...k] = e.target.dataset.ren.split('|');
+    const from = k.join('|');
+    nameBox(e.target.closest('li').querySelector('.ren-name'), from, text => renameCategory(t, from, text));
+  };
+  $('renOut').addEventListener('click', rename);
+  $('renIn').addEventListener('click', rename);
+
+  $('chkBank').addEventListener('change', renderCheck);
+  $('chkReal').addEventListener('input', renderCheck);
+  $('chkFix').addEventListener('click', fillMissing);
+}

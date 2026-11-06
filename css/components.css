@@ -71,9 +71,6 @@ button:disabled { opacity: 0.45; cursor: default; }
 .addgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .addgrid .wide { grid-column: 1 / -1; }
 .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
-dialog { width: min(480px, calc(100vw - 32px)); background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
-dialog::backdrop { background: rgba(8, 18, 15, 0.62); }
-dialog h2 { margin-bottom: 14px; }
 
 /* Menu */
 .menu { position: relative; }
@@ -161,6 +158,25 @@ dialog h2 { margin-bottom: 14px; }
 #colBox { width: 190px; }
 .col-pick { display: flex; gap: 8px; align-items: center; font-size: 14px; cursor: pointer; }
 #txCatNew { margin-top: 6px; }
+#addTitle { margin-bottom: 14px; }
+.quicks { display: flex; flex-wrap: wrap; gap: 8px; }
+.quicks:empty { display: none; }
+.quick { display: inline-flex; }
+.quick button:first-child { border-radius: 6px 0 0 6px; }
+.quick .x { border-left: 0; border-radius: 0 6px 6px 0; padding: 0 9px; color: var(--muted); }
+.latest, .ren { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.latest li { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.latest .what { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.latest small { display: block; color: var(--muted); font-size: 12px; }
+.latest .amt { font-weight: 600; white-space: nowrap; }
+.latest .amt.pos { color: var(--in); }
+.ren-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.ren-cols h3 { margin-bottom: 8px; }
+.ren li { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.ren .ren-name, .ren input { flex: 1; min-width: 0; }
+.ren small { color: var(--muted); }
+#chkFix { justify-self: start; }
+#checkPanel { align-self: start; }
 .txbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
 .txbar .textin { flex: 2; min-width: 200px; width: auto; }
 .txbar select { flex: 1; min-width: 140px; width: auto; }
