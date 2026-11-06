@@ -34,7 +34,7 @@ function filteredTx() {
     && (!f.cat || `${x.t}|${x.k}` === f.cat)
     && (!f.acct || x.s === f.acct)
     && (!f.day || x.d === f.day)
-    && (!q || `${x.n} ${x.k} ${x.s}`.toLowerCase().includes(q)));
+    && (!q || `${x.n} ${x.k} ${x.s} ${x.o || ''}`.toLowerCase().includes(q)));
 }
 
 function sortedTx() {
@@ -71,6 +71,9 @@ function fillFilterSelects() {
   $('acctList').innerHTML = accts.map(a => `<option value="${esc(a)}">`).join('');
 }
 
+// Only worth showing when it says something the note doesn't.
+const bankText = x => (x.o && x.o.toLowerCase() !== x.n.toLowerCase() ? `<small class="bank-text">Bank says: ${esc(x.o)}</small>` : '');
+
 function renderTable() {
   fillFilterSelects();
   const rows = sortedTx();
@@ -88,7 +91,7 @@ function renderTable() {
     const sign = x.t === 'income' ? '+' : '-';
     return `<tr data-id="${x.id}">
       <td class="date">${dayName(x.d)}</td>
-      <td class="wide">${esc(x.n) || `<span class="hint">No note</span>`}</td>
+      <td class="wide">${esc(x.n) || `<span class="hint">No note</span>`}${bankText(x)}</td>
       <td><select aria-label="What for" data-f="cat">${categoryOptions(x)}</select></td>
       <td>${esc(x.s)}</td>
       <td class="num-col amt${x.t === 'income' ? ' pos' : ''}">${sign}${esc(x.c)} ${x.a.toLocaleString('en-US')}</td>
@@ -114,8 +117,8 @@ function exportCsv() {
     const safe = /^[=+\-@]/.test(s) ? `'${s}` : s;
     return /[",\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
   };
-  const rows = sortedTx().map(x => [x.d, x.t === 'income' ? 'Money in' : 'Money out', x.k, x.n, x.s, x.a, x.c].map(cell).join(','));
-  downloadFile(`transactions-${new Date().toISOString().slice(0, 10)}.csv`, ['Date,Type,Category,Details,Account,Amount,Currency', ...rows].join('\n'), 'text/csv');
+  const rows = sortedTx().map(x => [x.d, x.t === 'income' ? 'Money in' : 'Money out', x.k, x.n, x.o || '', x.s, x.a, x.c].map(cell).join(','));
+  downloadFile(`transactions-${new Date().toISOString().slice(0, 10)}.csv`, ['Date,Type,What for,Note,Bank says,Bank,Amount,Type of money', ...rows].join('\n'), 'text/csv');
 }
 
 function fillAddCategories(value) {

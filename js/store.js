@@ -44,6 +44,7 @@ function cleanLedger(list) {
       k: RENAMED_CATEGORIES[k] ?? (k || plainCategory(t)),
       n: String(x.n || '').slice(0, 120),
       s: String(x.s || '').slice(0, 20),
+      ...(x.o ? { o: String(x.o).slice(0, 300) } : {}),   // the words from the bank statement
     }];
   }).map((x, i) => ({ ...x, id: i + 1 }));
 }
