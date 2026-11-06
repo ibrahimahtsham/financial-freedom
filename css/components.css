@@ -159,6 +159,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 .col-pick { display: flex; gap: 8px; align-items: center; font-size: 14px; cursor: pointer; }
 #txCatNew { margin-top: 6px; }
 #addTitle { margin-bottom: 14px; }
+.actions.rev { flex-direction: row-reverse; flex-wrap: wrap; justify-content: flex-start; }
 .quicks { display: flex; flex-wrap: wrap; gap: 8px; }
 .quicks:empty { display: none; }
 .quick { display: inline-flex; }

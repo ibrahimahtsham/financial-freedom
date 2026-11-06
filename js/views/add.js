@@ -25,7 +25,8 @@ function setEditing(id) {
   $('addTitle').textContent = id === null ? 'Add money in or out' : 'Change this';
   $('addSave').textContent = id === null ? 'Add it' : 'Save';
   $('addCancel').hidden = id === null;
-  $('quickRow').hidden = id !== null;
+  $('addBoth').hidden = id !== null;
+  $('addPickOnly').hidden = id !== null;
   $('txMsg').textContent = '';
 }
 
@@ -39,7 +40,6 @@ function clearForm(keepDate) {
   if (!keepDate || !$('txDate').value) $('txDate').value = todayDate();
   $('txNote').value = '';
   $('txSource').value = state.last.s;
-  $('txQuick').checked = false;
 }
 
 function focusAmount() {
@@ -69,16 +69,32 @@ function finishEdit() {
   scrollTo(0, back.y);
 }
 
-function addItem(fields) {
+function addItem(fields, undoPick) {
   const item = { id: ledger.reduce((m, i) => Math.max(m, i.id), 0) + 1, ...fields };
   ledger.push(item);
   state.last = { c: fields.c, s: fields.s };
   ledgerChanged();
   showInRange(fields.d.slice(0, 7));
-  showToast(`Added ${fields.n || fields.k}.`, () => {
+  showToast(`Added ${fields.n || fields.k}${undoPick ? ' and made a quick pick' : ''}.`, () => {
     ledger = ledger.filter(i => i !== item);
     ledgerChanged();
+    undoPick?.();
   });
+}
+
+// Saves a quick pick, and returns a way to take it back.
+function addPick({ d, ...pick }) {
+  const same = q => ['a', 'c', 't', 'k', 'n', 's'].every(f => q[f] === pick[f]);
+  if (state.quick.some(same)) return () => {};
+  if (!categoryList(pick.t).includes(pick.k)) state.ownCats[pick.t] = [...state.ownCats[pick.t], pick.k];
+  state.quick = [...state.quick, pick].slice(-12);
+  saveState();
+  renderAdd();
+  return () => {
+    state.quick = state.quick.filter(q => q !== pick);
+    saveState();
+    renderQuick();
+  };
 }
 
 const quickLabel = q => `${q.n || q.k}, ${exactMoney(q.c, q.a)}`;
@@ -87,7 +103,7 @@ function renderQuick() {
   $('quickList').innerHTML = state.quick.map((q, i) => `<span class="quick"><button type="button" data-quick="${i}">${esc(quickLabel(q))}</button><button type="button" class="x" data-drop="${i}" aria-label="Remove ${esc(q.n || q.k)}">×</button></span>`).join('');
   $('quickHint').textContent = state.quick.length
     ? 'One click adds it for the date in the form.'
-    : 'Add something you buy a lot and tick "Also make this a quick pick". Then it only takes one click.';
+    : 'Fill in the form for something you buy a lot, then press Add + quick pick or Only quick pick. After that it only takes one click.';
 }
 
 function renderLatest() {
@@ -217,7 +233,9 @@ function initAdd() {
     e.preventDefault();
     const a = parseNumber($('txAmount').value);
     const d = $('txDate').value;
-    if (!(a > 0) || !d) { $('txMsg').textContent = 'Type a date and an amount.'; return; }
+    const pickOnly = e.submitter?.id === 'addPickOnly';
+    if (!(a > 0)) { $('txMsg').textContent = 'Type an amount.'; return; }
+    if (!d && !pickOnly) { $('txMsg').textContent = 'Pick a date.'; return; }
     const t = chosenKind();
     const k = $('txCat').value === NEW_CATEGORY ? categoryName(t, $('txCatNew').value) : $('txCat').value;
     if (!k) { $('txMsg').textContent = 'Type a name for your new one.'; $('txCatNew').focus(); return; }
@@ -231,11 +249,8 @@ function initAdd() {
       showToast('Saved.');
       return;
     }
-    if ($('txQuick').checked) {
-      const { d: day, ...pick } = fields;
-      state.quick = [...state.quick, pick].slice(-12);
-    }
-    addItem(fields);
+    if (pickOnly) showToast(`Made a quick pick for ${fields.n || fields.k}.`, addPick(fields));
+    else addItem(fields, e.submitter?.id === 'addBoth' ? addPick(fields) : null);
     clearForm(true);
     focusAmount();
   });

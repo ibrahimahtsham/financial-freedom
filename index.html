@@ -176,9 +176,9 @@
               <div class="pick"><label for="txDate">Date</label><input class="textin" id="txDate" type="date"></div>
               <div class="pick"><label for="txNote">Note</label><input class="textin" id="txNote" type="text" maxlength="120"></div>
               <div class="pick"><label for="txSource">Bank or wallet</label><input class="textin" id="txSource" type="text" maxlength="20" list="acctList"><datalist id="acctList"></datalist></div>
-              <label class="col-pick wide" id="quickRow"><input type="checkbox" id="txQuick">Also make this a quick pick</label>
               <p class="hint wide" id="txMsg" role="status"></p>
-              <div class="wide actions"><button type="button" id="addCancel" hidden>Cancel</button><button type="submit" class="primary" id="addSave">Add it</button></div>
+              <!-- Add it comes first so that Enter presses it. The row is reversed on screen. -->
+              <div class="wide actions rev"><button type="submit" class="primary" id="addSave">Add it</button><button type="submit" id="addBoth">Add + quick pick</button><button type="submit" id="addPickOnly">Only quick pick</button><button type="button" id="addCancel" hidden>Cancel</button></div>
             </div>
           </form>
         </section>
