@@ -115,6 +115,7 @@ function scrollToStep(s) {
 
 function showStep(i) {
   releaseRange();
+  closeExplanations();
   tourAt = i;
   const s = TOUR_STEPS[i];
   if (s.tab === 'freedom') clearTourFilters();
@@ -152,11 +153,29 @@ function openTour() {
   }
   tourParts.forEach(id => { $(id).hidden = false; });
   showStep(0);
+  followTarget();
 }
+
+// Keeps the highlight on its area when the area changes size, such as opening a section.
+let tourLastBox = '';
+function followTarget() {
+  if (tourAt < 0) return;
+  const r = tourRect(TOUR_STEPS[tourAt]);
+  const box = r ? `${r.left},${r.top},${r.width},${r.height},${$('tourCard').offsetHeight}` : '';
+  if (box !== tourLastBox) {
+    tourLastBox = box;
+    placeTour();
+  }
+  requestAnimationFrame(followTarget);
+}
+
+const closeExplanations = () => document.querySelectorAll('.how[open]').forEach(d => { d.open = false; });
 
 function closeTour() {
   releaseRange();
   clearTourFilters();
+  closeExplanations();
+  expandedCats = { expense: false, income: false };
   tourAt = -1;
   tourParts.forEach(id => { $(id).hidden = true; });
   $('menu').open = false;
