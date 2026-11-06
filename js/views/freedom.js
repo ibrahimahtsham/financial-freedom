@@ -1,6 +1,7 @@
 // Freedom tab: your number, your date, your runway, and how each is worked out.
 const TAKE_YEARS = [5, 10, 15, 20, 30];
 const YEARS_AHEAD = Engine.MAX_MONTHS / 12;
+const LAST_AGE = 100;   // with a birth year, the timeline ends here
 let freedomView = null;
 
 function buildFreedom() {
@@ -15,7 +16,7 @@ function buildFreedom() {
   const hi = state.ret + RETURN_SPREAD;
   const hitLo = Engine.project({ ...input, ret: lo }).hit;
   const hitHi = Engine.project({ ...input, ret: hi }).hit;
-  const span = YEARS_AHEAD;
+  const span = state.born ? Math.max(5, LAST_AGE - (new Date().getFullYear() - state.born)) : YEARS_AHEAD;
   const run = ret => Engine.project({ cur, save, ret, months: span * 12 }).series;
   const [mid, low, high] = [run(state.ret), run(lo), run(hi)];
   const points = Array.from({ length: span + 1 }, (_, y) => ({ y, mid: mid[y * 12], lo: low[y * 12], hi: high[y * 12] }));
