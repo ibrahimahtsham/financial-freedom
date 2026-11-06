@@ -1,0 +1,9 @@
+{
+  "name": "financial-freedom",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser-only calculator for how much you need invested, and when you get there.",
+  "scripts": {
+    "test": "node --test"
+  }
+}
