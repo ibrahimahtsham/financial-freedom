@@ -241,24 +241,14 @@
 
         <div class="tile c4" id="tileDate"><h3>When you could get there</h3><div class="v" id="dateV"></div><p class="d" id="dateD"></p><details class="how"><summary>See how we worked this out</summary><div id="dateHow"></div></details></div>
         <div class="tile c4" id="tileRun"><h3>Your savings last</h3><div class="v" id="runV"></div><p class="d" id="runD"></p><details class="how"><summary>See how we worked this out</summary><div id="runHow"></div></details></div>
-        <div class="tile c4" id="tilePot"><h3>Your savings could pay you</h3><div class="v" id="potV"></div><p class="d" id="potD"></p><details class="how"><summary>See how we worked this out</summary><div id="potHow"></div></details></div>
+        <div class="tile c4" id="tilePot"><h3>After you get there</h3><div class="v" id="potV"></div><p class="d" id="potD"></p><details class="how"><summary>See how we worked this out</summary><div id="potHow"></div></details></div>
 
         <div class="panel c4 stack" id="inputs">
           <h2>Your numbers</h2>
-          <div class="pick"><label for="fBorn">Year you were born</label><span class="num"><input type="text" id="fBorn" inputmode="numeric" maxlength="4"></span><p class="hint">You can skip this. It lets us show your age.</p></div>
+          <div class="pick"><label for="fBorn">Year you were born</label><span class="num"><input type="text" id="fBorn" inputmode="numeric" maxlength="4"></span><p class="hint">You can skip this. It lets us plan up to age 100.</p></div>
           <div class="pick"><label for="fCur">Savings so far</label><span class="num"><span class="unit uMine"></span><input type="text" id="fCur" inputmode="decimal"></span><p class="hint" id="curHint"></p><button type="button" class="link start" id="curAuto" hidden></button></div>
           <div class="pick"><label for="fSave">Saving each month</label><span class="num"><span class="unit uMine"></span><input type="text" id="fSave" inputmode="decimal"></span><p class="hint" id="saveHint"></p></div>
           <div class="pick"><label for="fLive">What you want to spend each month</label><span class="num"><span class="unit uMine"></span><input type="text" id="fLive" inputmode="decimal"></span><p class="hint" id="liveHint"></p><button type="button" class="link start" id="liveAuto" hidden></button></div>
-          <div class="pick"><label for="fRet">How much your money grows each year</label><div class="row"><input type="range" id="fRetR" aria-label="How much your money grows each year" min="0" max="10" step="0.5"><span class="num"><input class="short" type="text" id="fRet" inputmode="decimal"><span class="unit">%</span></span></div><div class="chips" id="retChips">
-            <button type="button" data-ret="0">Bank account 0%</button>
-            <button type="button" data-ret="3">Slow and safer 3%</button>
-            <button type="button" data-ret="5">Faster but bumpy 5%</button>
-          </div>
-          <details class="how bare"><summary>What does this mean?</summary><div>
-            <p><strong>Money can grow.</strong> You can buy small parts of many companies, called shares. When those companies do well, your money grows with them. This is called investing, and it is different from keeping money in a bank.</p>
-            <p><strong>Prices go up too.</strong> So we only count the growth that is left after that. If your money grows 8% in a year and prices go up 3%, you can really buy about 5% more. That is why the numbers here are all in today's prices.</p>
-            <p><strong>These are guesses, not promises.</strong> Shares go up and down, and some years you lose money. Money in a bank often only keeps up with prices, or falls behind them, so 0% is a fair guess for it.</p>
-          </div></details></div>
         </div>
 
         <section class="panel c8">
@@ -266,15 +256,14 @@
             <h2>Your timeline</h2>
             <div class="legend">
               <span id="lgPast"><i class="key past"></i>What you really had</span>
-              <span><i class="key"></i><span id="lgMid"></span></span>
-              <span><i class="key band"></i><span id="lgBand"></span></span>
+              <span><i class="key"></i>Your plan</span>
               <span id="lgReal"><i class="key real"></i>At your real speed</span>
               <span><i class="key goal"></i>Goal</span>
             </div>
           </div>
-          <div class="chart-wrap" id="growthBox"><svg id="chart" class="chart" role="img" aria-label="Line chart of what you really had so far, then your savings growing toward your goal, with a shaded area for slower and faster growth"></svg></div>
+          <div class="chart-wrap" id="growthBox"><svg id="chart" class="chart" role="img" aria-label="Line chart of what you really had so far, then your savings going up to your goal and being spent until nothing is left"></svg></div>
           <p class="track" id="track" role="status" hidden></p>
-          <p class="note">All these numbers are in today's prices. They are guesses to help you plan, not advice from a money expert.</p>
+          <p class="note">We don't count any growth, and all these numbers are in today's prices, so your savings need to keep up with rising prices. This is to help you plan, not advice from a money expert.</p>
         </section>
 
         <section class="panel c12">

@@ -110,10 +110,7 @@ function drawGrowth(m) {
   const { points, past, from, to, yearNow, goalUsd, real } = m;
   const u = unit();
   const W = chartWidth(box), H = W < 480 ? 240 : 380, L = 52, R = 24, T = 14, B = 26;
-  const goal = goalUsd * u;
-  const highest = Math.max(points[0].mid, ...past.map(p => p.mid)) * u;
-  // The goal sets the height. Anything past it runs off the top rather than squashing the chart.
-  const top = goal > 0 ? Math.max(goal, highest) * 1.15 : Math.max(points[points.length - 1].mid * u * 1.05, 1);
+  const top = Math.max(goalUsd, ...points.map(p => Math.max(p.mid, p.real)), ...past.map(p => p.mid), 1 / u) * u * 1.15;
   const x = t => L + ((t - from) / (to - from)) * (W - L - R);
   const y = v => T + (1 - (v * u) / top) * (H - T - B);
   const yv = v => T + (1 - v / top) * (H - T - B);
@@ -123,18 +120,15 @@ function drawGrowth(m) {
   const base = state.born ?? 0;   // ticks land on round ages or round years
   const firstTick = Math.ceil((yearNow + from - base) / every) * every;
   for (let v = firstTick; v + base <= yearNow + to + 0.01; v += every) o += `<text x="${x(v + base - yearNow)}" y="${H - 6}" text-anchor="middle">${state.born ? `Age ${v}` : v}</text>`;
-  o += `<clipPath id="plot"><rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}"/></clipPath><g clip-path="url(#plot)">`;
-  const band = points.map(p => `${x(p.y)},${y(p.hi)}`).concat(points.slice().reverse().map(p => `${x(p.y)},${y(p.lo)}`)).join(' ');
-  o += `<polygon points="${band}" fill="var(--accent-soft)"/>`;
   if (goalUsd > 0) o += `<line x1="${L}" x2="${W - R}" y1="${y(goalUsd)}" y2="${y(goalUsd)}" stroke="var(--out)" stroke-width="2" stroke-dasharray="5 4"/><text class="goalt" x="${L + 6}" y="${y(goalUsd) + 16}">Goal: ${money(goalUsd)}</text>`;
   if (from < 0) o += `<line x1="${x(0)}" x2="${x(0)}" y1="${T}" y2="${H - B}" stroke="var(--line)"/><text x="${x(0) + 6}" y="${H - B - 6}">Today</text>`;
   if (real) o += line(points, 'real', 'stroke="var(--muted)" stroke-dasharray="2 4"');
   o += line(points, 'mid', 'stroke="var(--in)"');
   if (past.length) o += line(past, 'mid', 'stroke="var(--fg)"');
-  o += `</g><line id="cross" y1="${T}" y2="${H - B}" stroke="var(--muted)" visibility="hidden"/><circle id="dot" r="5" fill="var(--in)" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>`;
+  o += `<line id="cross" y1="${T}" y2="${H - B}" stroke="var(--muted)" visibility="hidden"/><circle id="dot" r="5" fill="var(--in)" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>`;
   setChart(box, W, H, o);
-  const stops = [...past, ...points.filter(p => p.y <= to && (p.y > 0 || !past.length))];
-  growthView = { stops, x, y: v => Math.max(T, y(v)), W };
+  const stops = [...past, ...points.filter(p => p.y > 0 || !past.length)];
+  growthView = { stops, x, y, W };
 }
 
 function growthHover(e) {
@@ -150,11 +144,9 @@ function growthHover(e) {
   $('dot').setAttribute('cx', x(p.y));
   $('dot').setAttribute('cy', y(p.mid));
   $('dot').setAttribute('visibility', 'visible');
-  const age = months => (state.born ? `Age ${ageIn(months)}, ` : '');
-  const text = p.k
-    ? `${age(Math.round(p.y * 12))}${monthName(p.k)}\nYou had: ${money(p.mid)}`
-    : `${age(p.y * 12)}${new Date().getFullYear() + p.y}\nSavings: ${money(p.mid)}\nPays you: ${money((p.mid / Engine.FREEDOM_MULTIPLE) / 12)} a month`;
-  showTip(text, e.clientX, e.clientY);
+  const months = Math.round(p.y * 12);
+  const when = `${state.born ? `Age ${ageIn(months)}, ` : ''}${p.k ? monthName(p.k) : dateIn(months)}`;
+  showTip(`${when}\n${p.k ? 'You had' : p.spending ? 'Left to spend' : 'Savings'}: ${money(p.mid)}`, e.clientX, e.clientY);
 }
 
 function growthLeave() {

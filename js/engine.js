@@ -1,11 +1,6 @@
 // Pure maths: no DOM and no app state, so it can be tested on its own.
 // Months are "YYYY-MM" strings.
 const Engine = (() => {
-  const MAX_MONTHS = 1200;
-  const FREEDOM_MULTIPLE = 25;   // 4% rule: 1 / 0.04
-
-  const monthlyRate = yearly => Math.pow(1 + yearly / 100, 1 / 12) - 1;
-
   function addMonths(ym, n) {
     const [y, m] = ym.split('-').map(Number);
     const i = y * 12 + (m - 1) + n;
@@ -18,31 +13,25 @@ const Engine = (() => {
     return (by - ay) * 12 + (bm - am);
   }
 
-  // Each month: pot = pot x (1 + monthly return) + saving.
-  function project({ cur, ret, save, goal = Infinity, months = MAX_MONTHS }) {
-    const r = monthlyRate(ret);
-    let pot = cur;
-    let hit = cur >= goal ? 0 : null;
-    const series = [pot];
-    for (let m = 1; m <= months; m++) {
-      pot = pot * (1 + r) + save;
-      series.push(pot);
-      if (hit === null && pot >= goal) hit = m;
-    }
-    return { hit, series };
+  // The first month you could stop: what you have by then pays for every month left.
+  // Null when you aren't saving and don't have enough today.
+  function stopMonth({ cur, save, spend, months }) {
+    if (cur >= spend * months) return 0;
+    if (save <= 0) return null;
+    return Math.ceil((spend * months - cur) / (save + spend) - 1e-9);   // rounding mustn't cost a month
   }
 
-  // Monthly saving needed to reach a goal in a set number of months.
-  function savingFor({ cur, ret, goal, months }) {
-    const r = monthlyRate(ret);
-    const g = Math.pow(1 + r, months);
-    const need = r > 0 ? ((goal - cur * g) * r) / (g - 1) : (goal - cur) / months;
-    return Math.max(0, need);
+  // What you have in month m: you add your saving until you stop, then spend it.
+  function balanceAt({ cur, save, spend, stop }, m) {
+    if (stop === null) return Math.max(0, cur + save * m);
+    if (m <= stop) return cur + save * m;
+    return Math.max(0, cur + save * stop - spend * (m - stop));
   }
 
-  const freedomNumber = monthly => Math.max(0, monthly) * 12 * FREEDOM_MULTIPLE;
+  // Monthly saving needed to be able to stop after a set number of months.
+  const savingToStop = ({ cur, spend, months, stop }) => Math.max(0, (spend * (months - stop) - cur) / stop);
 
-  // Whole months savings last at this spending, ignoring growth.
+  // Whole months savings last at this spending.
   const runway = (savings, spend) => (spend > 0 ? Math.floor(savings / spend) : Infinity);
 
   // How much prices rose from month `from` to month `to`, given yearly inflation
@@ -61,7 +50,7 @@ const Engine = (() => {
     return factor;
   }
 
-  return { MAX_MONTHS, FREEDOM_MULTIPLE, monthlyRate, addMonths, monthsBetween, project, savingFor, freedomNumber, runway, priceFactor };
+  return { addMonths, monthsBetween, stopMonth, balanceAt, savingToStop, runway, priceFactor };
 })();
 
 if (typeof module !== 'undefined') module.exports = Engine;

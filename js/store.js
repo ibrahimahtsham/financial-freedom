@@ -13,7 +13,7 @@ const thisMonth = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 
-const defaultState = () => ({ started: false, ccy: 'USD', real: false, cur: null, save: 0, live: null, ret: 5, born: null, hiddenCols: [], quick: [], last: { c: '', s: '' }, ownCats: { expense: [], income: [] } });
+const defaultState = () => ({ started: false, ccy: 'USD', real: false, cur: null, save: 0, live: null, born: null, hiddenCols: [], quick: [], last: { c: '', s: '' }, ownCats: { expense: [], income: [] } });
 
 const amount = v => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
 
@@ -28,7 +28,6 @@ function cleanState(raw) {
   s.cur = amount(raw.cur);
   s.save = amount(raw.save) ?? 0;
   s.live = amount(raw.live);
-  s.ret = Math.min(20, amount(raw.ret) ?? 5);
   s.born = validBirthYear(raw.born);
   if (Array.isArray(raw.hiddenCols)) s.hiddenCols = raw.hiddenCols.filter(c => typeof c === 'string');
   if (Array.isArray(raw.quick)) s.quick = raw.quick.filter(q => q && amount(q.a) !== null && /^[A-Z]{3}$/.test(q.c) && ['income', 'expense'].includes(q.t)).slice(0, 12).map(q => ({ a: q.a, c: q.c, t: q.t, k: String(q.k || 'Other').slice(0, 30), n: String(q.n || '').slice(0, 120), s: String(q.s || '').slice(0, 20) }));

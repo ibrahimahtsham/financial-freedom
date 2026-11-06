@@ -10,43 +10,38 @@ test('addMonths crosses year boundaries', () => {
   assert.equal(Engine.monthsBetween('2026-11', '2027-01'), 2);
 });
 
-test('monthly rates compound back to the yearly return', () => {
-  near(Math.pow(1 + Engine.monthlyRate(5), 12), 1.05);
+test('you can stop once savings pay for every month left', () => {
+  // 100 saved a month, 100 spent a month, 120 months: month 60 has 6000, and 60 months left cost 6000.
+  assert.equal(Engine.stopMonth({ cur: 0, save: 100, spend: 100, months: 120 }), 60);
 });
 
-test('reaches a goal with steady saving and no growth', () => {
-  assert.equal(Engine.project({ cur: 0, ret: 0, save: 100, goal: 1200 }).hit, 12);
+test('you can stop today with enough money', () => {
+  assert.equal(Engine.stopMonth({ cur: 12000, save: 0, spend: 100, months: 120 }), 0);
 });
 
-test('already at the goal means zero months', () => {
-  assert.equal(Engine.project({ cur: 500, ret: 5, save: 0, goal: 100 }).hit, 0);
+test('there is no date without saving or enough money', () => {
+  assert.equal(Engine.stopMonth({ cur: 100, save: 0, spend: 100, months: 120 }), null);
 });
 
-test('with no saving and no return the goal is never reached', () => {
-  assert.equal(Engine.project({ cur: 100, ret: 0, save: 0, goal: 1000 }).hit, null);
+test('money goes up to the stop month, then runs out at the end', () => {
+  const plan = { cur: 0, save: 100, spend: 100, stop: 60 };
+  assert.equal(Engine.balanceAt(plan, 30), 3000);
+  assert.equal(Engine.balanceAt(plan, 60), 6000);
+  assert.equal(Engine.balanceAt(plan, 90), 3000);
+  assert.equal(Engine.balanceAt(plan, 120), 0);
 });
 
-test('the series starts at current savings', () => {
-  const { series } = Engine.project({ cur: 50, ret: 0, save: 10, months: 3 });
-  assert.deepEqual(series, [50, 60, 70, 80]);
+test('the balance never goes below zero', () => {
+  assert.equal(Engine.balanceAt({ cur: 100, save: -50, spend: 10, stop: null }, 12), 0);
 });
 
-test('savingFor reaches the goal exactly on time', () => {
-  const need = Engine.savingFor({ cur: 1000, ret: 5, goal: 50000, months: 120 });
-  near(Engine.project({ cur: 1000, ret: 5, save: need, months: 120 }).series[120], 50000, 1e-6);
+test('savingToStop gets you there on time', () => {
+  const save = Engine.savingToStop({ cur: 1000, spend: 100, months: 120, stop: 60 });
+  assert.equal(Engine.stopMonth({ cur: 1000, save, spend: 100, months: 120 }), 60);
 });
 
-test('savingFor is zero when growth alone gets there', () => {
-  assert.equal(Engine.savingFor({ cur: 1000, ret: 5, goal: 1000, months: 120 }), 0);
-});
-
-test('savingFor works with no return', () => {
-  assert.equal(Engine.savingFor({ cur: 0, ret: 0, goal: 1200, months: 12 }), 100);
-});
-
-test('the freedom number is 25 times yearly costs', () => {
-  assert.equal(Engine.freedomNumber(70000), 21000000);
-  assert.equal(Engine.freedomNumber(-5), 0);
+test('savingToStop is zero when you already have enough', () => {
+  assert.equal(Engine.savingToStop({ cur: 99999, spend: 100, months: 120, stop: 60 }), 0);
 });
 
 test('runway counts whole months', () => {
