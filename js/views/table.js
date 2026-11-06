@@ -9,6 +9,7 @@ let editingId = null;
 const TX_COLUMNS = [
   { key: 'date', label: 'Date' },
   { key: 'note', label: 'Note', cls: 'wide' },
+  { key: 'bank', label: 'Bank says', cls: 'wide bank-says' },
   { key: 'cat', label: 'What for' },
   { key: 'acct', label: 'Bank' },
   { key: 'amount', label: 'Amount', cls: 'num-col' },
@@ -20,6 +21,7 @@ const signedUsd = x => (x.t === 'income' ? viewUsd(x) : -viewUsd(x));
 function sortValue(x, key) {
   if (key === 'date') return x.d;
   if (key === 'note') return x.n.toLowerCase();
+  if (key === 'bank') return (x.o || '').toLowerCase();
   if (key === 'cat') return x.k.toLowerCase();
   if (key === 'acct') return x.s.toLowerCase();
   return signedUsd(x);
@@ -71,9 +73,6 @@ function fillFilterSelects() {
   $('acctList').innerHTML = accts.map(a => `<option value="${esc(a)}">`).join('');
 }
 
-// Only worth showing when it says something the note doesn't.
-const bankText = x => (x.o && x.o.toLowerCase() !== x.n.toLowerCase() ? `<small class="bank-text">Bank says: ${esc(x.o)}</small>` : '');
-
 function renderTable() {
   fillFilterSelects();
   const rows = sortedTx();
@@ -82,23 +81,26 @@ function renderTable() {
   const start = txPage * TX_PAGE;
   const page = rows.slice(start, start + TX_PAGE);
   const convert = ledger.some(x => x.c !== state.ccy) || state.real;
+  const showBank = ledger.some(x => x.o);   // only people with imported statements have this
+  const columns = TX_COLUMNS.filter(c => c.key !== 'bank' || showBank);
   const heading = c => (c.key === 'view' ? (convert ? `In ${state.ccy}` : '') : c.label);
   const arrow = key => (txSort.key === key ? (txSort.dir > 0 ? ' ↑' : ' ↓') : '');
   const aria = key => (txSort.key === key ? ` aria-sort="${txSort.dir > 0 ? 'ascending' : 'descending'}"` : '');
 
-  $('txHead').innerHTML = `<tr>${TX_COLUMNS.map(c => `<th class="${c.cls || ''}"${aria(c.key)}>${heading(c) ? `<button type="button" data-sort="${c.key}">${heading(c)}${arrow(c.key)}</button>` : ''}</th>`).join('')}<th></th></tr>`;
+  $('txHead').innerHTML = `<tr>${columns.map(c => `<th class="${c.cls || ''}"${aria(c.key)}>${heading(c) ? `<button type="button" data-sort="${c.key}">${heading(c)}${arrow(c.key)}</button>` : ''}</th>`).join('')}<th></th></tr>`;
   $('txBody').innerHTML = page.length ? page.map(x => {
     const sign = x.t === 'income' ? '+' : '-';
     return `<tr data-id="${x.id}">
       <td class="date">${dayName(x.d)}</td>
-      <td class="wide">${esc(x.n) || `<span class="hint">No note</span>`}${bankText(x)}</td>
+      <td class="wide">${esc(x.n) || `<span class="hint">No note</span>`}</td>
+      ${showBank ? `<td class="wide bank-says">${esc(x.o || '')}</td>` : ''}
       <td><select aria-label="What for" data-f="cat">${categoryOptions(x)}</select></td>
       <td>${esc(x.s)}</td>
       <td class="num-col amt${x.t === 'income' ? ' pos' : ''}">${sign}${esc(x.c)} ${x.a.toLocaleString('en-US')}</td>
       <td class="num-col muted">${convert ? `${sign}${fmt(viewUsd(x) * unit())}` : ''}</td>
       <td class="acts"><button type="button" class="x" data-act="edit">Edit</button><button type="button" class="x" data-act="delete">Delete</button></td>
     </tr>`;
-  }).join('') : '<tr><td colspan="7" class="hint empty">Nothing found.</td></tr>';
+  }).join('') : '<tr><td colspan="${columns.length + 1}" class="hint empty">Nothing found.</td></tr>';
 
   const net = rows.reduce((a, x) => a + signedUsd(x), 0);
   $('txCount').textContent = `${fmt(rows.length)} ${rows.length === 1 ? 'item' : 'items'}, ${net < 0 ? '-' : '+'}${money(Math.abs(net))} in total`;

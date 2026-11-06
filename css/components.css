@@ -166,7 +166,8 @@ dialog h2 { margin-bottom: 14px; }
 .txtable td { padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; vertical-align: middle; }
 .txtable tbody tr:hover { background: var(--bg); }
 .txtable .wide { white-space: normal; min-width: 220px; width: 45%; overflow-wrap: anywhere; }
-.txtable .bank-text { display: block; color: var(--muted); font-size: 12px; }
+.txtable .wide.bank-says { color: var(--muted); font-size: 13px; width: 45%; }
+.txtable .wide.bank-says button { font-size: 13px; }
 .txtable .num-col { text-align: right; }
 .txtable .amt { font-weight: 600; }
 .txtable .amt.pos { color: var(--in); }
