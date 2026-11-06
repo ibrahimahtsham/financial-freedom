@@ -12,7 +12,7 @@ const TOUR_STEPS = [
   { section: 'Money', tab: 'money', els: ['calendar'], t: 'Spending by day', p: 'Each square is a day. Darker means you spent more that day.', tryIt: 'Try it: put your mouse on a square to see that day, or click it to show that day in your money list.' },
   { section: 'Money', tab: 'money', els: ['txSec'], t: 'Your money list', p: 'Every bit of money in or out. You can change what something was for, or make your own type. You can also edit, delete, hide columns, or download the list.', tryIt: 'Try it: click a heading like Amount to sort the list, or search for something.' },
 
-  { section: 'Add', tab: 'add', els: ['addBox', 'quickPanel'], locked: true, t: 'Add money in or out', p: 'This page is where you write down money you get or spend. It remembers your bank and stays open, so you can add a few in a row. Quick picks add things you buy a lot in one click.' },
+  { section: 'Add', tab: 'add', els: ['addBox', 'quickPanel'], locked: true, t: 'Add money in or out', p: 'This page is where you write down money you get or spend. It remembers your bank and stays open, so you can add a few in a row. Quick picks fill in the form for things you buy a lot, and you can change anything before adding.' },
   { section: 'Add', tab: 'add', els: ['checkPanel'], locked: true, t: 'Does it match your bank?', p: 'Now and then, type what your bank really shows. If it doesn\'t match your money list, you forgot to add something, and this tells you how much.' },
 
   { section: 'Freedom', tab: 'freedom', els: ['hero'], t: 'Your goal', p: 'This is how much money you need so it can pay for your life without a job. It is 25 times what you spend in a year.', tryIt: 'Try it: open "See how we worked this out" to see the sum with your own numbers.' },

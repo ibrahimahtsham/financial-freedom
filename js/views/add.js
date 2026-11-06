@@ -86,7 +86,6 @@ function addItem(fields, undoPick) {
 function addPick({ d, ...pick }) {
   const same = q => ['a', 'c', 't', 'k', 'n', 's'].every(f => q[f] === pick[f]);
   if (state.quick.some(same)) return () => {};
-  if (!categoryList(pick.t).includes(pick.k)) state.ownCats[pick.t] = [...state.ownCats[pick.t], pick.k];
   state.quick = [...state.quick, pick].slice(-12);
   saveState();
   renderAdd();
@@ -97,13 +96,27 @@ function addPick({ d, ...pick }) {
   };
 }
 
-const quickLabel = q => `${q.n || q.k}, ${exactMoney(q.c, q.a)}`;
+const quickLabel = q => (q.a > 0 ? `${q.n || q.k}, ${exactMoney(q.c, q.a)}` : q.n || q.k);
 
 function renderQuick() {
   $('quickList').innerHTML = state.quick.map((q, i) => `<span class="quick"><button type="button" data-quick="${i}">${esc(quickLabel(q))}</button><button type="button" class="x" data-drop="${i}" aria-label="Remove ${esc(q.n || q.k)}">×</button></span>`).join('');
   $('quickHint').textContent = state.quick.length
-    ? 'One click adds it for the date in the form.'
-    : 'Fill in the form for something you buy a lot, then press Add + quick pick or Only quick pick. After that it only takes one click.';
+    ? 'Click one to fill in the form. Change anything you want, then add it.'
+    : 'Fill in the form for something you buy a lot, then press Add + quick pick or Only quick pick. After that, one click fills in the form.';
+}
+
+// Fills the form but adds nothing, so the amount or anything else can change first.
+function usePick(q) {
+  setEditing(null);
+  setKind(q.t);
+  fillAddCategories(q.k);
+  $('txAmount').value = q.a > 0 ? q.a : '';
+  $('txCcy').value = q.c;
+  $('txNote').value = q.n;
+  $('txSource').value = q.s;
+  scrollTo(0, 0);
+  $('txAmount').focus({ preventScroll: true });
+  $('txAmount').select();
 }
 
 function renderLatest() {
@@ -234,12 +247,12 @@ function initAdd() {
     const a = parseNumber($('txAmount').value);
     const d = $('txDate').value;
     const pickOnly = e.submitter?.id === 'addPickOnly';
-    if (!(a > 0)) { $('txMsg').textContent = 'Type an amount.'; return; }
+    if (!(a > 0) && !pickOnly) { $('txMsg').textContent = 'Type an amount.'; return; }
     if (!d && !pickOnly) { $('txMsg').textContent = 'Pick a date.'; return; }
     const t = chosenKind();
     const k = $('txCat').value === NEW_CATEGORY ? categoryName(t, $('txCatNew').value) : $('txCat').value;
     if (!k) { $('txMsg').textContent = 'Type a name for your new one.'; $('txCatNew').focus(); return; }
-    const fields = { d, a, c: $('txCcy').value, t, k, n: $('txNote').value.trim().slice(0, 120), s: $('txSource').value.trim().slice(0, 20) };
+    const fields = { d, a: a > 0 ? a : 0, c: $('txCcy').value, t, k, n: $('txNote').value.trim().slice(0, 120), s: $('txSource').value.trim().slice(0, 20) };
     const existing = ledger.find(x => x.id === editingId);
     if (existing) {
       Object.assign(existing, fields);
@@ -262,7 +275,7 @@ function initAdd() {
       saveState();
       renderQuick();
     }
-    if (quick) addItem({ ...state.quick[+quick], d: $('txDate').value || todayDate() });
+    if (quick) usePick(state.quick[+quick]);
   });
 
   $('latestList').addEventListener('click', e => {
