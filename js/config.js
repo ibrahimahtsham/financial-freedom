@@ -1,6 +1,6 @@
 // Constants shared across the app.
 const APP_ID = 'financial-freedom';
-const FILE_VERSION = 6;
+const FILE_VERSION = 7;
 const KEY = 'financial-freedom-v3';
 const TX_KEY = `${KEY}-history`;
 const RATE_KEY = `${KEY}-rates`;
@@ -27,6 +27,9 @@ const CURRENCY_COUNTRY = {
   SAR: 'SAU', SEK: 'SWE', SGD: 'SGP', THB: 'THA', TRY: 'TUR', USD: 'USA', VND: 'VNM', ZAR: 'ZAF',
 };
 
+// Moving your own money or getting it back isn't a cost of living.
+const NOT_LIVING_COSTS = ['Own accounts', 'Refund'];
+
 // Used until live data arrives. Yearly % from the World Bank.
 const BUILT_IN_INFLATION = {
   PAK: { 2022: 19.87, 2023: 30.77, 2024: 12.63, 2025: 3.55 },
@@ -36,5 +39,5 @@ const BUILT_IN_INFLATION = {
 // The last entry of each list is the fallback for anything uncertain.
 const CATEGORIES = {
   expense: ['Food', 'Rent', 'Transport', 'Bills', 'Phone', 'Shopping', 'Health', 'Learning', 'Entertainment', 'Software', 'Family', 'Own accounts', 'Refund', 'Cash', 'Bank fees', 'Other'],
-  income: ['Job', 'Job or family', 'Family', 'Own accounts', 'Refund', 'Investments', 'Bank profit', 'Other'],
+  income: ['Job', 'Family', 'Own accounts', 'Refund', 'Investments', 'Bank profit', 'Other'],
 };

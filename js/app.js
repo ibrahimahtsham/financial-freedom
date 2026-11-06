@@ -31,7 +31,7 @@ function refreshAll() {
   saveState();
   if (!state.started) return;
   $('ccy').value = state.ccy;
-  $('real').checked = state.real;
+  document.querySelector(`input[name=priceView][value=${state.real ? 'today' : 'paid'}]`).checked = true;
   moneyControls();
   renderRateNote();
   renderFreedom();
@@ -177,10 +177,10 @@ function initTopBar() {
     $('txCcy').value = state.ccy;
     refreshAll();
   });
-  $('real').addEventListener('change', () => {
-    state.real = $('real').checked;
+  document.querySelectorAll('input[name=priceView]').forEach(i => i.addEventListener('change', () => {
+    state.real = i.value === 'today';
     refreshAll();
-  });
+  }));
   document.addEventListener('click', e => { if (!$('menu').contains(e.target)) $('menu').open = false; });
   $('retry').addEventListener('click', fetchData);
   $('exportBtn').addEventListener('click', exportPlan);

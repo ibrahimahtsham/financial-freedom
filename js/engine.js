@@ -32,6 +32,14 @@ const Engine = (() => {
     return { hit, series };
   }
 
+  // Monthly saving needed to reach a goal in a set number of months.
+  function savingFor({ cur, ret, goal, months }) {
+    const r = monthlyRate(ret);
+    const g = Math.pow(1 + r, months);
+    const need = r > 0 ? ((goal - cur * g) * r) / (g - 1) : (goal - cur) / months;
+    return Math.max(0, need);
+  }
+
   const freedomNumber = monthly => Math.max(0, monthly) * 12 * FREEDOM_MULTIPLE;
 
   // Whole months savings last at this spending, ignoring growth.
@@ -53,7 +61,7 @@ const Engine = (() => {
     return factor;
   }
 
-  return { MAX_MONTHS, FREEDOM_MULTIPLE, monthlyRate, addMonths, monthsBetween, project, freedomNumber, runway, priceFactor };
+  return { MAX_MONTHS, FREEDOM_MULTIPLE, monthlyRate, addMonths, monthsBetween, project, savingFor, freedomNumber, runway, priceFactor };
 })();
 
 if (typeof module !== 'undefined') module.exports = Engine;

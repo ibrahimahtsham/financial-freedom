@@ -31,6 +31,19 @@ test('the series starts at current savings', () => {
   assert.deepEqual(series, [50, 60, 70, 80]);
 });
 
+test('savingFor reaches the goal exactly on time', () => {
+  const need = Engine.savingFor({ cur: 1000, ret: 5, goal: 50000, months: 120 });
+  near(Engine.project({ cur: 1000, ret: 5, save: need, months: 120 }).series[120], 50000, 1e-6);
+});
+
+test('savingFor is zero when growth alone gets there', () => {
+  assert.equal(Engine.savingFor({ cur: 1000, ret: 5, goal: 1000, months: 120 }), 0);
+});
+
+test('savingFor works with no return', () => {
+  assert.equal(Engine.savingFor({ cur: 0, ret: 0, goal: 1200, months: 12 }), 100);
+});
+
 test('the freedom number is 25 times yearly costs', () => {
   assert.equal(Engine.freedomNumber(70000), 21000000);
   assert.equal(Engine.freedomNumber(-5), 0);

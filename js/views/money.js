@@ -1,15 +1,19 @@
 // Money tab: the dashboard. The transactions table lives in table.js.
 
-// Average of the last 6 full months, always in plain amounts. Feeds the Freedom tab.
+let expandedCats = { expense: false, income: false };
+
+// What the Freedom tab reads from your tracking: your balance, and your average
+// monthly living costs over the last 12 full months, in today's prices.
 function tracked() {
-  const keys = new Set(fullMonths(6));
-  let income = 0, spend = 0;
+  const keys = new Set(fullMonths(12));
+  let spend = 0, balance = 0;
   for (const x of ledger) {
-    if (!keys.has(x.d.slice(0, 7))) continue;
-    if (x.t === 'income') income += usdOf(x);
-    else spend += usdOf(x);
+    balance += x.t === 'income' ? usdOf(x) : -usdOf(x);
+    if (x.t === 'expense' && keys.has(x.d.slice(0, 7)) && !NOT_LIVING_COSTS.includes(x.k)) {
+      spend += usdOf(x) * priceFactor(x.c, x.d.slice(0, 7));
+    }
   }
-  return { has: income + spend > 0, income: income / 6, spend: spend / 6 };
+  return { has: ledger.length > 0, spend: spend / 12, balance: Math.max(0, balance) };
 }
 
 function sumMonths(keys) {
@@ -57,15 +61,16 @@ function renderCategories(keys) {
     const all = Object.entries(sums[t]).sort((a, b) => b[1] - a[1]);
     const total = all.reduce((a, [, v]) => a + v, 0);
     const top = all.length ? all[0][1] : 1;
-    const shown = all.slice(0, 7);
-    const rest = all.slice(7).reduce((a, [, v]) => a + v, 0);
-    const row = (k, v, click) => `<li><button type="button" class="cat${txFilter.cat === `${t}|${k}` ? ' on' : ''}"${click ? ` data-cat="${t}|${esc(k)}"` : ' disabled'}>
+    const open = expandedCats[t];
+    const shown = open ? all : all.slice(0, 7);
+    const more = all.length - 7;
+    const row = (k, v) => `<li><button type="button" class="cat${txFilter.cat === `${t}|${k}` ? ' on' : ''}" data-cat="${t}|${esc(k)}">
       <span class="cat-name">${esc(k)}</span>
       <span class="cat-track"><i style="width:${Math.max(1, (v / top) * 100)}%"></i></span>
       <span class="cat-val">${money(v)}<small>${Math.round((v / total) * 100)}%</small></span>
     </button></li>`;
     $(id).innerHTML = all.length
-      ? shown.map(([k, v]) => row(k, v, true)).join('') + (rest > 0 ? row(`${all.length - 7} more`, rest, false) : '')
+      ? shown.map(([k, v]) => row(k, v)).join('') + (more > 0 ? `<li><button type="button" class="link more" data-more="${t}">${open ? 'Show less' : `Show ${more} more`}</button></li>` : '')
       : '<li class="hint">Nothing in this period.</li>';
   };
   list('expense', 'catOut');
@@ -74,7 +79,7 @@ function renderCategories(keys) {
 
 function renderTop(keys) {
   const set = new Set(keys);
-  const top = ledger.filter(x => x.t === 'expense' && set.has(x.d.slice(0, 7))).sort((a, b) => viewUsd(b) - viewUsd(a)).slice(0, 6);
+  const top = ledger.filter(x => x.t === 'expense' && set.has(x.d.slice(0, 7))).sort((a, b) => viewUsd(b) - viewUsd(a)).slice(0, 5);
   $('topList').innerHTML = top.length ? top.map(x => `<li><span class="what">${esc(x.n) || esc(x.k)}<small>${dayName(x.d)}, ${esc(x.k)}</small></span><span class="when">${money(viewUsd(x))}</span></li>`).join('') : '<li class="hint">Nothing in this period.</li>';
 }
 
@@ -106,8 +111,6 @@ function renderInsights(keys, rows) {
   const days = Math.round((Date.parse(end) - Date.parse(`${keys[0]}-01`)) / 864e5) + 1;
   const free = Math.max(0, days - spent.length);
   out.push(`<b>${fmt(free)} of ${fmt(days)} days</b> had no spending.`);
-  const other = items.filter(x => x.k === plainCategory('expense')).reduce((a, x) => a + viewUsd(x), 0);
-  if (other / total > 0.25) out.push(`<b>${Math.round((other / total) * 100)}%</b> is still in Other. Sorting it makes this page more useful.`);
   $('insights').innerHTML = out.map(s => `<li>${s}</li>`).join('');
 }
 
@@ -198,6 +201,12 @@ function renderMoney() {
 
 function initMoney() {
   const pickCategory = e => {
+    const toggle = e.target.dataset.more;
+    if (toggle) {
+      expandedCats[toggle] = !expandedCats[toggle];
+      renderMoney();
+      return;
+    }
     const b = e.target.closest('[data-cat]');
     if (!b) return;
     txFilter.cat = txFilter.cat === b.dataset.cat ? '' : b.dataset.cat;

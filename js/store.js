@@ -1,6 +1,6 @@
 // Saved data and validation. `cur`, `save` and `live` are kept in USD and shown in
-// the chosen currency, so switching never drifts. `save` and `live` are null when
-// they should follow your tracked averages. Transactions keep their own currency.
+// the chosen currency, so switching never drifts. `cur` and `live` are null when
+// they should follow your tracked balance and spending. Transactions keep their own currency.
 const readStored = (key, fallback) => {
   try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (e) { return fallback; }
 };
@@ -13,7 +13,7 @@ const thisMonth = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 
-const defaultState = () => ({ started: false, ccy: 'USD', real: false, cur: 0, save: null, live: null, ret: 5 });
+const defaultState = () => ({ started: false, ccy: 'USD', real: false, cur: null, save: 0, live: null, ret: 5 });
 
 const amount = v => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
 
@@ -23,14 +23,14 @@ function cleanState(raw) {
   if (/^[A-Z]{3}$/.test(raw.ccy)) s.ccy = raw.ccy;
   s.started = raw.started === true;
   s.real = raw.real === true;
-  s.cur = amount(raw.cur) ?? 0;
-  s.save = amount(raw.save);
+  s.cur = amount(raw.cur);
+  s.save = amount(raw.save) ?? 0;
   s.live = amount(raw.live);
   s.ret = Math.min(20, amount(raw.ret) ?? 5);
   return s;
 }
 
-const RENAMED_CATEGORIES = { Expense: 'Other', Income: 'Other', Transfer: 'Other', 'Refund or reversal': 'Refund' };
+const RENAMED_CATEGORIES = { Expense: 'Other', Income: 'Other', Transfer: 'Other', 'Refund or reversal': 'Refund', 'Job or family': 'Other' };
 const plainCategory = type => CATEGORIES[type][CATEGORIES[type].length - 1];
 
 function cleanLedger(list) {
