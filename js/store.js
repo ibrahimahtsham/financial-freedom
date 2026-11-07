@@ -13,9 +13,11 @@ const thisMonth = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 
-const defaultState = () => ({ started: false, ccy: 'USD', real: false, cur: null, save: 0, live: null, born: null, freeIn: null, hiddenCols: [], quick: [], last: { c: '', s: '' }, ownCats: { expense: [], income: [] } });
+const defaultState = () => ({ started: false, ccy: 'USD', real: false, cur: null, save: 0, live: null, born: null, freeIn: null, growOn: false, grow: 3, hiddenCols: [], quick: [], last: { c: '', s: '' }, ownCats: { expense: [], income: [] } });
 
 const amount = v => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
+
+const validGrowth = n => (typeof n === 'number' && n >= 0 && n <= 15 ? n : null);
 
 const validBirthYear = y => (Number.isInteger(y) && y >= 1900 && y <= new Date().getFullYear() ? y : null);
 
@@ -30,6 +32,8 @@ function cleanState(raw) {
   s.live = amount(raw.live);
   s.born = validBirthYear(raw.born);
   s.freeIn = Number.isInteger(raw.freeIn) && raw.freeIn > 0 ? raw.freeIn : null;
+  s.growOn = raw.growOn === true;
+  s.grow = validGrowth(raw.grow) ?? s.grow;
   if (Array.isArray(raw.hiddenCols)) s.hiddenCols = raw.hiddenCols.filter(c => typeof c === 'string');
   if (Array.isArray(raw.quick)) s.quick = raw.quick.filter(q => q && amount(q.a) !== null && /^[A-Z]{3}$/.test(q.c) && ['income', 'expense'].includes(q.t)).slice(0, 12).map(q => ({ a: q.a, c: q.c, t: q.t, k: String(q.k || 'Other').slice(0, 30), n: String(q.n || '').slice(0, 120), s: String(q.s || '').slice(0, 20) }));
   for (const t of ['expense', 'income']) {

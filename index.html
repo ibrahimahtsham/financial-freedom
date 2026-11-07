@@ -249,6 +249,14 @@
           <div class="pick"><label for="fCur">Savings so far</label><span class="num"><span class="unit uMine"></span><input type="text" id="fCur" inputmode="decimal"></span><p class="hint" id="curHint"></p><button type="button" class="link start" id="curAuto" hidden></button></div>
           <div class="pick"><label for="fSave">Saving each month</label><span class="num"><span class="unit uMine"></span><input type="text" id="fSave" inputmode="decimal"></span><p class="hint" id="saveHint"></p></div>
           <div class="pick"><label for="fLive">What you want to spend each month</label><span class="num"><span class="unit uMine"></span><input type="text" id="fLive" inputmode="decimal"></span><p class="hint" id="liveHint"></p><button type="button" class="link start" id="liveAuto" hidden></button></div>
+          <div class="pick">
+            <span class="pick-name" id="growName">What your savings do</span>
+            <div class="seg" role="radiogroup" aria-labelledby="growName">
+              <label><input type="radio" name="growMode" value="still" checked><span>Sit still</span></label>
+              <label><input type="radio" name="growMode" value="grow"><span>Grow</span></label>
+            </div>
+          </div>
+          <div class="pick" id="growRow" hidden><label for="fGrow">How much they grow each year</label><span class="num"><input class="short" type="text" id="fGrow" inputmode="decimal" maxlength="4"><span class="unit">%</span></span><p class="hint">Prices go up too, so only count what they grow on top of that. Nobody knows this number. Up to 15.</p></div>
         </div>
 
         <section class="panel c8">
@@ -263,7 +271,7 @@
           </div>
           <div class="chart-wrap" id="growthBox"><svg id="chart" class="chart" role="img" aria-label="Line chart of what you really had so far, then your savings going up to your goal and being spent until nothing is left"></svg></div>
           <p class="track" id="track" role="status" hidden></p>
-          <p class="note">We don't count any growth, and all these numbers are in today's prices, so your savings need to keep up with rising prices. This is to help you plan, not advice from a money expert.</p>
+          <p class="note" id="planNote"></p>
         </section>
 
         <section class="panel c12">

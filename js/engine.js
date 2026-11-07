@@ -13,23 +13,47 @@ const Engine = (() => {
     return (by - ay) * 12 + (bm - am);
   }
 
+  // `rate` is how much savings grow in a year, in percent. Leave it out for no growth.
+  const monthlyRate = rate => Math.pow(1 + (rate || 0) / 100, 1 / 12) - 1;
+
+  // What adding 1 a month for n months comes to.
+  const addsUpTo = (n, g) => (g ? (Math.pow(1 + g, n) - 1) / g : n);
+
+  // What you need today to take out 1 a month for n months.
+  const paysFor = (n, g) => (g ? (1 - Math.pow(1 + g, -n)) / g : n);
+
+  const saved = (cur, save, n, g) => cur * Math.pow(1 + g, n) + save * addsUpTo(n, g);
+
+  // What you need on the day you stop, to spend this much for this many months.
+  const needed = ({ spend, months, rate }) => spend * paysFor(months, monthlyRate(rate));
+
   // The first month you could stop: what you have by then pays for every month left.
-  // Null when you aren't saving and don't have enough today.
-  function stopMonth({ cur, save, spend, months }) {
-    if (cur >= spend * months) return 0;
-    if (save <= 0) return null;
-    return Math.ceil((spend * months - cur) / (save + spend) - 1e-9);   // rounding mustn't cost a month
+  // Null when you would never get there.
+  function stopMonth({ cur, save, spend, months, rate }) {
+    const g = monthlyRate(rate);
+    const enough = m => saved(cur, save, m, g) >= spend * paysFor(months - m, g) - 1e-6;   // rounding mustn't cost a month
+    if (enough(0)) return 0;
+    if (save < 0 || (save === 0 && (!g || cur <= 0)) || !enough(months)) return null;
+    let lo = 0, hi = months;
+    while (hi - lo > 1) {
+      const m = Math.floor((lo + hi) / 2);
+      if (enough(m)) hi = m; else lo = m;
+    }
+    return hi;
   }
 
   // What you have in month m: you add your saving until you stop, then spend it.
-  function balanceAt({ cur, save, spend, stop }, m) {
-    if (stop === null) return Math.max(0, cur + save * m);
-    if (m <= stop) return cur + save * m;
-    return Math.max(0, cur + save * stop - spend * (m - stop));
+  function balanceAt({ cur, save, spend, stop, rate }, m) {
+    const g = monthlyRate(rate);
+    if (stop === null || m <= stop) return Math.max(0, saved(cur, save, m, g));
+    return Math.max(0, saved(saved(cur, save, stop, g), -spend, m - stop, g));
   }
 
   // Monthly saving needed to be able to stop after a set number of months.
-  const savingToStop = ({ cur, spend, months, stop }) => Math.max(0, (spend * (months - stop) - cur) / stop);
+  function savingToStop({ cur, spend, months, stop, rate }) {
+    const g = monthlyRate(rate);
+    return Math.max(0, (spend * paysFor(months - stop, g) - saved(cur, 0, stop, g)) / addsUpTo(stop, g));
+  }
 
   // Whole months savings last at this spending.
   const runway = (savings, spend) => (spend > 0 ? Math.floor(savings / spend) : Infinity);
@@ -50,7 +74,7 @@ const Engine = (() => {
     return factor;
   }
 
-  return { addMonths, monthsBetween, stopMonth, balanceAt, savingToStop, runway, priceFactor };
+  return { addMonths, monthsBetween, needed, stopMonth, balanceAt, savingToStop, runway, priceFactor };
 })();
 
 if (typeof module !== 'undefined') module.exports = Engine;

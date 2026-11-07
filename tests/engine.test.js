@@ -44,6 +44,40 @@ test('savingToStop is zero when you already have enough', () => {
   assert.equal(Engine.savingToStop({ cur: 99999, spend: 100, months: 120, stop: 60 }), 0);
 });
 
+test('with no rate, the goal is spending times months', () => {
+  assert.equal(Engine.needed({ spend: 100, months: 120 }), 12000);
+});
+
+test('growth means you need less to stop', () => {
+  const need = Engine.needed({ spend: 100, months: 120, rate: 3 });
+  assert.ok(need < 12000 && need > 10000);
+});
+
+test('growth gets you there sooner', () => {
+  const plan = { cur: 1000, save: 100, spend: 100, months: 600 };
+  assert.ok(Engine.stopMonth({ ...plan, rate: 3 }) < Engine.stopMonth(plan));
+});
+
+test('with growth, the money runs out right at the end', () => {
+  const plan = { cur: 0, save: 100, spend: 100, months: 600, rate: 3 };
+  const stop = Engine.stopMonth(plan);
+  const peak = Engine.balanceAt({ ...plan, stop }, stop);
+  assert.ok(peak >= Engine.needed({ spend: 100, months: 600 - stop, rate: 3 }));
+  assert.ok(peak < Engine.needed({ spend: 100, months: 600 - stop + 2, rate: 3 }));
+  near(Engine.balanceAt({ cur: Engine.needed({ spend: 100, months: 120, rate: 3 }), save: 0, spend: 100, stop: 0, rate: 3 }, 120), 0, 1e-6);
+});
+
+test('savings can reach the goal by growth alone', () => {
+  assert.ok(Engine.stopMonth({ cur: 5000, save: 0, spend: 100, months: 600, rate: 3 }) > 0);
+  assert.equal(Engine.stopMonth({ cur: 0, save: 0, spend: 100, months: 600, rate: 3 }), null);
+});
+
+test('savingToStop gets you there on time with growth', () => {
+  const plan = { cur: 1000, spend: 100, months: 600, rate: 3 };
+  const save = Engine.savingToStop({ ...plan, stop: 240 });
+  assert.equal(Engine.stopMonth({ ...plan, save }), 240);
+});
+
 test('runway counts whole months', () => {
   assert.equal(Engine.runway(13400, 835), 16);
   assert.equal(Engine.runway(100, 0), Infinity);

@@ -39,47 +39,49 @@ function buildFreedom() {
   const yearNow = now.getFullYear() + now.getMonth() / 12;
   const months = state.born ? Math.max(60, Math.round((state.born + LAST_AGE - yearNow) * 12)) : YEARS_WITHOUT_AGE * 12;
 
-  const hit = Engine.stopMonth({ cur, save, spend: live, months });
-  const goalUsd = live * (months - (hit ?? 0));
-  const peak = hit === null ? cur : Engine.balanceAt({ cur, save, spend: live, stop: hit }, hit);
+  const rate = state.growOn ? state.grow : 0;
+
+  const hit = Engine.stopMonth({ cur, save, spend: live, months, rate });
+  const goalUsd = Engine.needed({ spend: live, months: months - (hit ?? 0), rate });
+  const peak = hit === null ? cur : Engine.balanceAt({ cur, save, spend: live, stop: hit, rate }, hit);
 
   const history = savingsHistory();
   const past = history.map(r => ({ y: -Engine.monthsBetween(r.k, thisMonth()) / 12, mid: r.usd, k: r.k }));
   const from = state.born ? state.born - yearNow : past[0]?.y ?? 0;
 
   const real = live > 0 && save > 0 && hit !== 0 ? realSaving(history) : null;
-  const realHit = real ? Engine.stopMonth({ cur, save: real.save, spend: live, months }) : null;
+  const realHit = real ? Engine.stopMonth({ cur, save: real.save, spend: live, months, rate }) : null;
   const stops = [...new Set([...Array(Math.floor(months / 12) + 1).keys()].map(y => y * 12).concat(months, hit ?? 0, realHit ?? 0))].sort((a, b) => a - b);
   const points = stops.map(m => ({
     m, y: m / 12, spending: hit !== null && m > hit,
-    mid: Engine.balanceAt({ cur, save, spend: live, stop: hit }, m),
-    real: real ? Engine.balanceAt({ cur, save: real.save, spend: live, stop: realHit }, m) : 0,
+    mid: Engine.balanceAt({ cur, save, spend: live, stop: hit, rate }, m),
+    real: real ? Engine.balanceAt({ cur, save: real.save, spend: live, stop: realHit, rate }, m) : 0,
   }));
   const spendNow = t.has ? t.spend : live;
-  return { t, cur, live, save, months, goalUsd, peak, hit, points, past, from, to: months / 12, yearNow, real, realHit, spendNow, runway: Engine.runway(cur, spendNow) };
+  return { t, cur, live, save, months, rate, goalUsd, peak, hit, points, past, from, to: months / 12, yearNow, real, realHit, spendNow, runway: Engine.runway(cur, spendNow) };
 }
 
 // The years you typed: how much to save, and how much you need to get paid for that.
 function renderOwnYears(f) {
-  const { cur, live, months, spendNow } = f;
+  const { cur, live, months, rate, spendNow } = f;
   const y = state.freeIn;
   const fits = y !== null && y * 12 < months;
   $('takeUse').hidden = !fits || live <= 0;
   if (y === null) { $('takeAnswer').textContent = ''; return; }
   if (!fits) { $('takeAnswer').textContent = state.born ? `That is past age ${LAST_AGE}. Try fewer years.` : 'That is too far away. Try fewer years.'; return; }
-  const need = Engine.savingToStop({ cur, spend: live, months, stop: y * 12 });
+  const need = Engine.savingToStop({ cur, spend: live, months, stop: y * 12, rate });
   const year = new Date().getFullYear() + y;
   $('takeUse').dataset.save = need;
   $('takeAnswer').innerHTML = `To be free by ${year}${state.born ? `, when you are ${year - state.born}` : ''}, you need to get paid <b>${money(need + spendNow)} a month</b>. That is ${money(need)} to save and ${money(spendNow)} to spend.`;
 }
 
 function renderTake(f) {
-  const { cur, live, months, spendNow } = f;
+  const { cur, live, months, rate, spendNow } = f;
   $('takeNote').textContent = f.save > 0
     ? 'Pick when you want to get there. You need to get paid enough to cover your saving and your spending.'
     : "You aren't saving right now, so here is what each choice would need. You need to get paid enough to cover your saving and your spending.";
   const rows = TAKE_YEARS.filter(y => y * 12 < months).map(y => {
-    const need = Engine.savingToStop({ cur, spend: live, months, stop: y * 12 });
+    const need = Engine.savingToStop({ cur, spend: live, months, stop: y * 12, rate });
     const year = new Date().getFullYear() + y;
     const mine = Math.abs(need - f.save) < 0.5;
     return `<tr class="${mine ? 'me' : ''}"><td>${y} years, by ${year}${state.born ? ` (age ${year - state.born})` : ''}</td><td class="num-col">${money(need)}</td><td class="num-col">${money(spendNow)}</td><td class="num-col amt">${money(need + spendNow)}</td><td class="acts">${mine ? 'Your plan' : `<button type="button" data-save="${need}">Use this</button>`}</td></tr>`;
@@ -104,7 +106,7 @@ function renderTrack(f) {
 
 function renderFreedom() {
   const f = buildFreedom();
-  const { t, cur, live, save, goalUsd, hit } = f;
+  const { t, cur, live, save, rate, goalUsd, hit } = f;
   const u = unit();
 
   $('headline').textContent = goalUsd > 0 ? `You need ${bigMoney(goalUsd)}.` : 'How much do you want to spend each month?';
@@ -116,7 +118,7 @@ function renderFreedom() {
     else path = "You aren't saving right now, so we can't give a date yet.";
   }
   $('lede').textContent = goalUsd > 0
-    ? `That is enough to spend ${money(live)} a month ${lastsUntil} without a job. You have ${money(cur)} today. ${path}`
+    ? `That is enough to spend ${money(live)} a month ${lastsUntil} without a job${rate ? `, if your savings grow ${rate}% a year` : ''}. You have ${money(cur)} today. ${path}`
     : 'Type it below and your goal will show here.';
 
   const frac = goalUsd > 0 ? Math.min(1, cur / goalUsd) : 0;
@@ -141,17 +143,29 @@ function renderFreedom() {
   $('potD').textContent = hit === null ? 'Once you get there, you spend your savings.' : `You spend ${money(live)} a month for ${duration(left)}.`;
 
   // How each result is worked out
-  $('numHow').innerHTML = `<code>${money(live)} × ${fmt(left)} months = ${money(goalUsd)}</code>
-    <p>Take what you spend in a month. Times the months from the day you stop ${state.born ? `until you are ${LAST_AGE}` : `until ${YEARS_WITHOUT_AGE} years from today`}. That is your goal.</p>
+  const until = state.born ? `until you are ${LAST_AGE}` : `until ${YEARS_WITHOUT_AGE} years from today`;
+  const growing = `growing ${rate}% a year`;
+  $('numHow').innerHTML = rate
+    ? `<code>${money(live)} a month for ${fmt(left)} months, ${growing} = ${money(goalUsd)}</code>
+    <p>Your savings keep growing while you spend them, so you need less than ${money(live * left)}, which is what those months cost. That is your goal.</p>
+    <p>The ${rate}% is a guess. If your money grows less, your goal is too small. Press Sit still to see the plan with no guess.</p>`
+    : `<code>${money(live)} × ${fmt(left)} months = ${money(goalUsd)}</code>
+    <p>Take what you spend in a month. Times the months from the day you stop ${until}. That is your goal.</p>
     <p>We don't count any growth, so nothing here depends on a guess about the future. The later you stop, the fewer months you need to pay for, so the goal gets smaller.</p>`;
   $('dateHow').innerHTML = hit > 0
-    ? `<code>${money(cur)} + ${money(save)} × ${fmt(hit)} months = ${money(f.peak)}</code>
-    <p>Each month we add what you save. The date is the first month your savings can pay for all the months left.</p>`
+    ? `<code>${money(cur)} + ${money(save)} a month for ${fmt(hit)} months${rate ? `, ${growing}` : ''} = ${money(f.peak)}</code>
+    <p>Each month we add what you save${rate ? ' and what your savings grew' : ''}. The date is the first month your savings can pay for all the months left.</p>`
     : '<p>Each month we add what you save. The date is the first month your savings can pay for all the months left.</p>';
   $('runHow').innerHTML = `<code>${money(cur)} ÷ ${money(f.spendNow)} = ${f.spendNow > 0 ? (cur / f.spendNow).toFixed(1) : 'no limit'} months</code>
     <p>That is your savings divided by what you spend each month.</p>`;
-  $('potHow').innerHTML = `<code>${money(goalUsd)} ÷ ${money(live)} = ${fmt(left)} months</code>
+  $('potHow').innerHTML = rate
+    ? `<code>${money(goalUsd)}, ${growing}, pays ${money(live)} a month for ${fmt(left)} months</code>
+    <p>Once you stop, you take out what you spend each month, and what is left keeps growing until the money is gone.</p>`
+    : `<code>${money(goalUsd)} ÷ ${money(live)} = ${fmt(left)} months</code>
     <p>Once you stop, you take out what you spend each month until the money is gone.</p>`;
+  $('planNote').textContent = rate
+    ? `We count your savings growing ${rate}% a year on top of rising prices. That is a guess: real years can be better or worse, and some years you lose money. All these numbers are in today's prices. This is to help you plan, not advice from a money expert.`
+    : "We don't count any growth, and all these numbers are in today's prices, so your savings need to keep up with rising prices. This is to help you plan, not advice from a money expert.";
 
   // Input hints
   $('curHint').textContent = state.cur === null && t.has ? 'Worked out from your money list.' : '';
@@ -169,6 +183,9 @@ function renderFreedom() {
   set('fLive', fmt(live * u));
   set('fBorn', state.born ?? '');
   set('takeYears', state.freeIn ?? '');
+  set('fGrow', state.grow);
+  document.querySelector(`input[name="growMode"][value="${state.growOn ? 'grow' : 'still'}"]`).checked = true;
+  $('growRow').hidden = !state.growOn;
   document.querySelectorAll('.uMine').forEach(e => { e.textContent = state.ccy; });
 
   renderTake(f);
@@ -192,6 +209,19 @@ function initFreedom() {
     renderFreedom();
   });
   $('fBorn').addEventListener('blur', renderFreedom);
+  document.querySelectorAll('input[name="growMode"]').forEach(r => r.addEventListener('change', () => {
+    state.growOn = r.value === 'grow';
+    saveState();
+    renderFreedom();
+  }));
+  $('fGrow').addEventListener('input', () => {
+    const n = validGrowth(parseNumber($('fGrow').value));
+    if (n === null) return;
+    state.grow = n;
+    saveState();
+    renderFreedom();
+  });
+  $('fGrow').addEventListener('blur', renderFreedom);
   $('takeYears').addEventListener('input', () => {
     const y = Math.floor(parseNumber($('takeYears').value));
     state.freeIn = y > 0 ? y : null;

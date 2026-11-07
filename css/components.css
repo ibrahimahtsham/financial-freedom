@@ -25,7 +25,8 @@
 
 /* Forms */
 .pick { display: grid; gap: 4px; min-width: 0; align-content: start; }
-.pick label { font-weight: 500; font-size: 14px; }
+.pick label, .pick-name { font-weight: 500; font-size: 14px; }
+.pick[hidden] { display: none; }
 .textin, select {
   font: inherit;
   font-size: 14px;
