@@ -1,6 +1,5 @@
 // Freedom tab: your number, your date, your runway, and how each is worked out.
 const TAKE_YEARS = [5, 10, 15, 20, 30];
-const LAST_AGE = 100;   // your money has to last until this age
 const YEARS_WITHOUT_AGE = 70;   // what we plan for when we don't know your age
 const TRACK_MONTHS = 6;   // how far back we look to see how much you really save
 
@@ -30,6 +29,10 @@ function realSaving(history) {
 }
 let freedomView = null;
 
+// The plan needs at least five years to work with.
+const soonestLastAge = () => new Date().getFullYear() - state.born + 6;
+const fitsLastAge = n => validLastAge(n) !== null && n >= soonestLastAge();
+
 function buildFreedom() {
   const t = tracked();
   const cur = state.cur ?? t.balance;
@@ -37,7 +40,7 @@ function buildFreedom() {
   const save = state.save;
   const now = new Date();
   const yearNow = now.getFullYear() + now.getMonth() / 12;
-  const months = state.born ? Math.max(60, Math.round((state.born + LAST_AGE - yearNow) * 12)) : YEARS_WITHOUT_AGE * 12;
+  const months = state.born ? Math.max(60, Math.round((state.born + state.lastAge - yearNow) * 12)) : YEARS_WITHOUT_AGE * 12;
 
   const rate = state.growOn ? state.grow : 0;
 
@@ -68,7 +71,7 @@ function renderOwnYears(f) {
   const fits = y !== null && y * 12 < months;
   $('takeUse').hidden = !fits || live <= 0;
   if (y === null) { $('takeAnswer').textContent = ''; return; }
-  if (!fits) { $('takeAnswer').textContent = state.born ? `That is past age ${LAST_AGE}. Try fewer years.` : 'That is too far away. Try fewer years.'; return; }
+  if (!fits) { $('takeAnswer').textContent = state.born ? `That is past age ${state.lastAge}. Try fewer years.` : 'That is too far away. Try fewer years.'; return; }
   const need = Engine.savingToStop({ cur, spend: live, months, stop: y * 12, rate });
   const year = new Date().getFullYear() + y;
   $('takeUse').dataset.save = need;
@@ -110,7 +113,7 @@ function renderFreedom() {
   const u = unit();
 
   $('headline').textContent = goalUsd > 0 ? `You need ${bigMoney(goalUsd)}.` : 'How much do you want to spend each month?';
-  const lastsUntil = state.born ? `until you are ${LAST_AGE},` : `for ${YEARS_WITHOUT_AGE} years from today,`;
+  const lastsUntil = state.born ? `until you are ${state.lastAge},` : `for ${YEARS_WITHOUT_AGE} years from today,`;
   let path = '';
   if (goalUsd > 0) {
     if (hit === 0) path = 'You already have enough.';
@@ -139,11 +142,11 @@ function renderFreedom() {
   $('runD').textContent = 'If no money comes in.';
   $('tileRun').classList.toggle('first', save <= 0 && hit !== 0);
   const left = f.months - (hit ?? 0);
-  $('potV').textContent = state.born ? `Until age ${LAST_AGE}` : duration(left);
+  $('potV').textContent = state.born ? `Until age ${state.lastAge}` : duration(left);
   $('potD').textContent = hit === null ? 'Once you get there, you spend your savings.' : `You spend ${money(live)} a month for ${duration(left)}.`;
 
   // How each result is worked out
-  const until = state.born ? `until you are ${LAST_AGE}` : `until ${YEARS_WITHOUT_AGE} years from today`;
+  const until = state.born ? `until you are ${state.lastAge}` : `until ${YEARS_WITHOUT_AGE} years from today`;
   const growing = `growing ${rate}% a year`;
   $('numHow').innerHTML = rate
     ? `<code>${money(live)} a month for ${fmt(left)} months, ${growing} = ${money(goalUsd)}</code>
@@ -186,8 +189,12 @@ function renderFreedom() {
   const typedPay = focused === $('fPay') ? parseNumber($('fPay').value) / u : NaN;
   const typedYears = focused === $('fYears') ? parseNumber($('fYears').value) : NaN;
   $('payHint').textContent = typedPay < live ? 'That is less than you want to spend, so nothing is left to save.' : 'What you spend plus what you save.';
-  $('yearsHint').textContent = typedYears * 12 >= f.months ? (state.born ? `That is past age ${LAST_AGE}. Try fewer years.` : 'That is too far away. Try fewer years.') : hit === null ? 'Type a number and we work out what to save.' : '';
+  $('yearsHint').textContent = typedYears * 12 >= f.months ? (state.born ? `That is past age ${state.lastAge}. Try fewer years.` : 'That is too far away. Try fewer years.') : hit === null ? 'Type a number and we work out what to save.' : '';
   set('fBorn', state.born ?? '');
+  set('fAge', state.lastAge);
+  $('ageRow').hidden = !state.born;
+  const typedAge = focused === $('fAge') ? Number($('fAge').value) : NaN;
+  $('ageHint').textContent = typedAge && !fitsLastAge(typedAge) ? `Pick an age from ${soonestLastAge()} to ${MAX_LAST_AGE}.` : 'Your money runs out at this age, so pick one you are sure to pass.';
   set('takeYears', state.freeIn ?? '');
   set('fGrow', state.grow);
   document.querySelector(`input[name="growMode"][value="${state.growOn ? 'grow' : 'still'}"]`).checked = true;
@@ -215,6 +222,12 @@ function initFreedom() {
     renderFreedom();
   });
   $('fBorn').addEventListener('blur', renderFreedom);
+  $('fAge').addEventListener('input', () => {
+    const n = Number($('fAge').value);
+    if (fitsLastAge(n)) { state.lastAge = n; saveState(); }
+    renderFreedom();
+  });
+  $('fAge').addEventListener('blur', renderFreedom);
   document.querySelectorAll('input[name="growMode"]').forEach(r => r.addEventListener('change', () => {
     state.growOn = r.value === 'grow';
     saveState();

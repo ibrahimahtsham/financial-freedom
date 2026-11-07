@@ -13,11 +13,14 @@ const thisMonth = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 
-const defaultState = () => ({ started: false, ccy: 'USD', real: false, cur: null, save: 0, live: null, born: null, freeIn: null, growOn: false, grow: 3, hiddenCols: [], quick: [], last: { c: '', s: '' }, ownCats: { expense: [], income: [] } });
+const defaultState = () => ({ started: false, ccy: 'USD', real: false, cur: null, save: 0, live: null, born: null, freeIn: null, lastAge: 100, growOn: false, grow: 3, hiddenCols: [], quick: [], last: { c: '', s: '' }, ownCats: { expense: [], income: [] } });
 
 const amount = v => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
 
 const validGrowth = n => (typeof n === 'number' && n >= 0 && n <= 15 ? n : null);
+
+const MAX_LAST_AGE = 120;
+const validLastAge = n => (Number.isInteger(n) && n >= 20 && n <= MAX_LAST_AGE ? n : null);
 
 const validBirthYear = y => (Number.isInteger(y) && y >= 1900 && y <= new Date().getFullYear() ? y : null);
 
@@ -32,6 +35,7 @@ function cleanState(raw) {
   s.live = amount(raw.live);
   s.born = validBirthYear(raw.born);
   s.freeIn = Number.isInteger(raw.freeIn) && raw.freeIn > 0 ? raw.freeIn : null;
+  s.lastAge = validLastAge(raw.lastAge) ?? s.lastAge;
   s.growOn = raw.growOn === true;
   s.grow = validGrowth(raw.grow) ?? s.grow;
   if (Array.isArray(raw.hiddenCols)) s.hiddenCols = raw.hiddenCols.filter(c => typeof c === 'string');
