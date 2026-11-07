@@ -125,14 +125,8 @@ function renderFreedom() {
     : 'Type it below and your goal will show here.';
 
   const frac = goalUsd > 0 ? Math.min(1, cur / goalUsd) : 0;
-  const crest = $('crest');
-  const length = crest.getTotalLength();
-  if (length) {
-    const pt = crest.getPointAtLength(frac * length);
-    $('you').setAttribute('cx', pt.x);
-    $('you').setAttribute('cy', pt.y);
-  }
-  $('progress').textContent = frac >= 1 ? 'You have reached the top.' : `You are ${frac < 0.1 ? (frac * 100).toFixed(1) : Math.round(frac * 100)}% of the way up.`;
+  $('bar').style.width = `${frac * 100}%`;
+  $('progress').textContent = frac >= 1 ? 'You have reached your goal.' : `You are ${frac < 0.1 ? (frac * 100).toFixed(1) : Math.round(frac * 100)}% of the way there.`;
 
   // Results
   $('dateV').textContent = hit === null ? 'No date yet' : hit === 0 ? 'Now' : dateIn(hit);

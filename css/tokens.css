@@ -1,30 +1,33 @@
-/* Colours and fonts, with separate light and dark values. */
+/* Black and white, with colour only where it means something:
+   --in is money coming in and being on track, --out is money going out and warnings,
+   --goal is your goal. Nothing else gets a colour. */
 :root {
-  --bg: #e8efec; --surface: #f8faf9; --fg: #1b2a27; --muted: #526661; --line: #cfdbd6;
-  --accent: #2a6b58; --accent-soft: #d3e4dd; --goal: #a4561d;
-  --ridge1: #c6d8d2; --ridge2: #9dbcb2; --ridge3: #3f7a68; --marker: #a4561d;
-  --in: #0b7d5e; --out: #c2410c;
-  --heat1: #b6dccc; --heat2: #7cc0a6; --heat3: #3f9a7e; --heat4: #0b6e52;
-  --display: "Newsreader", Georgia, serif;
-  --body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bg: #fff; --surface: #fff; --fg: #000; --muted: #666; --line: #d9d9d9; --soft: #f2f2f2;
+  --accent: #000; --accent-soft: #f2f2f2;
+  --in: #00876a; --out: #d92d20; --goal: #b77900; --goal-text: #8a5b00;
+  --heat1: #f8d9d5; --heat2: #efa79f; --heat3: #e2685a; --heat4: #b3201a;
+  --shade: rgba(0, 0, 0, 0.6);
+  --gap-x: 40px; --gap-y: 48px;
+  --display: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --body: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #121a18; --surface: #1a2421; --fg: #e4ece9; --muted: #9db0aa; --line: #2e3d38;
-    --accent: #7cc7ad; --accent-soft: #21382f; --goal: #eba46c;
-    --ridge1: #22332e; --ridge2: #2d4a41; --ridge3: #4a8571; --marker: #eba46c;
-    --in: #1ca07c; --out: #d9772e;
-    --heat1: #24493d; --heat2: #2c7a62; --heat3: #3fae8c; --heat4: #7fe0bf;
+    --bg: #000; --surface: #000; --fg: #fff; --muted: #9a9a9a; --line: #2e2e2e; --soft: #161616;
+    --accent: #fff; --accent-soft: #161616;
+    --in: #00a08c; --out: #e8493c; --goal: #c08800; --goal-text: #c08800;
+    --heat1: #3a1512; --heat2: #7a2a23; --heat3: #bd3f34; --heat4: #f26a5d;
+    --shade: rgba(0, 0, 0, 0.72);
     color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --bg: #121a18; --surface: #1a2421; --fg: #e4ece9; --muted: #9db0aa; --line: #2e3d38;
-  --accent: #7cc7ad; --accent-soft: #21382f; --goal: #eba46c;
-  --ridge1: #22332e; --ridge2: #2d4a41; --ridge3: #4a8571; --marker: #eba46c;
-  --in: #1ca07c; --out: #d9772e;
-  --heat1: #24493d; --heat2: #2c7a62; --heat3: #3fae8c; --heat4: #7fe0bf;
+  --bg: #000; --surface: #000; --fg: #fff; --muted: #9a9a9a; --line: #2e2e2e; --soft: #161616;
+  --accent: #fff; --accent-soft: #161616;
+  --in: #00a08c; --out: #e8493c; --goal: #c08800; --goal-text: #c08800;
+  --heat1: #3a1512; --heat2: #7a2a23; --heat3: #bd3f34; --heat4: #f26a5d;
+  --shade: rgba(0, 0, 0, 0.72);
   color-scheme: dark;
 }

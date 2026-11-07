@@ -56,7 +56,7 @@ function drawBalance(rows) {
   let o = yGrid(y, top, 3, L, W - R);
   const line = rows.map((r, i) => `${x(i)},${y(r.v)}`).join(' ');
   o += `<polygon points="${x(0)},${y(0)} ${line} ${x(rows.length - 1)},${y(0)}" fill="var(--accent-soft)"/>`;
-  o += `<polyline points="${line}" fill="none" stroke="var(--in)" stroke-width="2" stroke-linejoin="round"/>`;
+  o += `<polyline points="${line}" fill="none" stroke="var(--fg)" stroke-width="2" stroke-linejoin="round"/>`;
   const slot = (W - L - R) / Math.max(1, rows.length - 1);
   rows.forEach((r, i) => {
     const isDay = r.k.length > 7;
@@ -120,7 +120,7 @@ function drawGrowth(m) {
   const base = state.born ?? 0;   // ticks land on round ages or round years
   const firstTick = Math.ceil((yearNow + from - base) / every) * every;
   for (let v = firstTick; v + base <= yearNow + to + 0.01; v += every) o += `<text x="${x(v + base - yearNow)}" y="${H - 6}" text-anchor="middle">${state.born ? `Age ${v}` : v}</text>`;
-  if (goalUsd > 0) o += `<line x1="${L}" x2="${W - R}" y1="${y(goalUsd)}" y2="${y(goalUsd)}" stroke="var(--out)" stroke-width="2" stroke-dasharray="5 4"/><text class="goalt" x="${L + 6}" y="${y(goalUsd) + 16}">Goal: ${money(goalUsd)}</text>`;
+  if (goalUsd > 0) o += `<line x1="${L}" x2="${W - R}" y1="${y(goalUsd)}" y2="${y(goalUsd)}" stroke="var(--goal)" stroke-width="2" stroke-dasharray="5 4"/><text class="goalt" x="${L + 6}" y="${y(goalUsd) + 16}">Goal: ${money(goalUsd)}</text>`;
   if (from < 0) o += `<line x1="${x(0)}" x2="${x(0)}" y1="${T}" y2="${H - B}" stroke="var(--line)"/><text x="${x(0) + 6}" y="${H - B - 6}">Today</text>`;
   if (real) o += line(points, 'real', 'stroke="var(--muted)" stroke-dasharray="2 4"');
   o += line(points, 'mid', 'stroke="var(--in)"');

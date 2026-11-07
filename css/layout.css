@@ -1,4 +1,4 @@
-/* Page structure: welcome screen, sticky bar, and the 12-column dashboard grid. */
+/* Page structure: welcome screen, sticky bar, and the 12-column grid. */
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 
@@ -29,7 +29,7 @@ body {
   gap: 4px 20px;
   padding: 8px clamp(16px, 2.5vw, 36px) 0;
 }
-.brand { display: flex; align-items: center; gap: 8px; font-family: var(--display); font-size: 19px; padding-bottom: 8px; }
+.brand { display: flex; align-items: center; gap: 8px; font-family: var(--display); font-weight: 800; font-stretch: 85%; font-size: 18px; padding-bottom: 8px; }
 .tabs { display: flex; gap: 2px; }
 .tabs button {
   border: 0;
@@ -39,53 +39,52 @@ body {
   font-weight: 600;
   color: var(--muted);
 }
+.tabs button:hover:not(:disabled) { color: var(--fg); }
 .tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
 .controls { display: flex; align-items: center; gap: 10px; margin-left: auto; padding-bottom: 8px; }
 .controls select { width: 180px; }
 
-.content { padding: 20px clamp(16px, 2.5vw, 36px) 56px; }
+.content { padding: 28px clamp(16px, 2.5vw, 36px) 64px; }
 .view { min-width: 0; }
 
-.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
+.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--gap-y) var(--gap-x); align-items: start; }
 .c3 { grid-column: span 3; }
 .c4 { grid-column: span 4; }
 .c5 { grid-column: span 5; }
 .c7 { grid-column: span 7; }
 .c8 { grid-column: span 8; }
 .c12 { grid-column: span 12; }
+.col { display: grid; gap: var(--gap-y); min-width: 0; align-content: start; }
 
-.hero { order: -2; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: end; }
+.hero { order: -2; display: grid; gap: 14px; }
 
 h1 {
   font-family: var(--display);
-  font-weight: 500;
-  font-size: clamp(32px, 4.4vw, 58px);
-  line-height: 1.06;
+  font-weight: 800;
+  font-stretch: 80%;
+  font-size: clamp(44px, 7.5vw, 116px);
+  line-height: 0.98;
   margin: 0;
   text-wrap: balance;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
-h2 { font-family: var(--display); font-weight: 500; font-size: 22px; line-height: 1.2; margin: 0 0 10px; }
-h3 { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
+h2 { font-family: var(--display); font-weight: 700; font-size: 20px; line-height: 1.2; margin: 0 0 12px; }
+h3 { font-size: 14px; font-weight: 600; margin: 0 0 8px; }
 
-.lede { font-size: 17px; margin: 12px 0 0; max-width: 62ch; color: var(--muted); }
+.lede { font-size: 18px; margin: 0; max-width: 64ch; }
 .note { font-size: 13.5px; color: var(--muted); margin: 8px 0 0; max-width: 80ch; }
 .note:empty { display: none; }
 .hint { font-size: 12.5px; color: var(--muted); margin: 0; }
 .hint:empty { display: none; }
-.err { color: var(--goal); font-size: 13.5px; margin: 0; font-weight: 500; }
+.err { color: var(--out); font-size: 13.5px; margin: 0; font-weight: 500; }
 
-.ridge { display: block; width: 100%; height: auto; }
-.ridge .r1 { fill: var(--ridge1); }
-.ridge .r2 { fill: var(--ridge2); }
-.ridge .r3, .ridge .home { fill: var(--ridge3); }
-.ridge .you { fill: var(--marker); stroke: var(--bg); stroke-width: 3; }
-.progress { margin: 6px 0 0; font-weight: 500; }
+.bar { height: 6px; background: var(--line); margin-top: 10px; }
+.bar i { display: block; height: 100%; min-width: 4px; max-width: 100%; background: var(--in); }
+.progress { margin: 0; font-size: 14px; font-weight: 500; }
 
 @media (max-width: 1180px) {
   .c3 { grid-column: span 6; }
   .c4, .c5, .c7, .c8 { grid-column: span 12; }
-  .hero { grid-template-columns: minmax(0, 1fr); gap: 16px; }
 }
 
 @media (max-width: 720px) {
@@ -93,5 +92,7 @@ h3 { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
   .brand span { display: none; }
   .controls { width: 100%; flex-wrap: wrap; margin-left: 0; }
   .controls select { flex: 1; min-width: 130px; width: auto; }
-  .c3 { grid-column: span 12; }
+  :root { --gap-y: 36px; }
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .c3, .c4, .c5, .c7, .c8, .c12 { grid-column: auto; }
 }

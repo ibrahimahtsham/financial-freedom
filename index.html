@@ -7,7 +7,7 @@
 <meta name="description" content="See where your money goes, and how much you need so you never have to work for money again.">
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Figtree:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/layout.css">
 <link rel="stylesheet" href="css/components.css">
@@ -162,28 +162,39 @@
 
     <section class="view" id="view-add" role="tabpanel" aria-labelledby="tab-add" hidden>
       <div class="grid">
-        <section class="panel c7">
-          <form id="addBox" autocomplete="off" novalidate>
-            <h2 id="addTitle">Add money in or out</h2>
-            <div class="addgrid">
-              <div class="seg wide" role="radiogroup" aria-label="Money in or out">
-                <label><input type="radio" name="txKind" value="expense" checked><span>Money out</span></label>
-                <label><input type="radio" name="txKind" value="income"><span>Money in</span></label>
+        <div class="c7 col">
+          <section class="panel">
+            <form id="addBox" autocomplete="off" novalidate>
+              <h2 id="addTitle">Add money in or out</h2>
+              <div class="addgrid">
+                <div class="seg wide" role="radiogroup" aria-label="Money in or out">
+                  <label><input type="radio" name="txKind" value="expense" checked><span>Money out</span></label>
+                  <label><input type="radio" name="txKind" value="income"><span>Money in</span></label>
+                </div>
+                <div class="pick"><label for="txAmount">Amount</label><input class="textin" id="txAmount" type="text" inputmode="decimal"></div>
+                <div class="pick"><label for="txCcy">Type of money</label><select id="txCcy"></select></div>
+                <div class="pick"><label for="txCat">What for</label><select id="txCat"></select><input class="textin" id="txCatNew" type="text" maxlength="30" placeholder="Name it" aria-label="Name for your new one" hidden></div>
+                <div class="pick"><label for="txDate">Date</label><input class="textin" id="txDate" type="date"></div>
+                <div class="pick"><label for="txNote">Note</label><input class="textin" id="txNote" type="text" maxlength="120"></div>
+                <div class="pick"><label for="txSource">Bank or wallet</label><input class="textin" id="txSource" type="text" maxlength="20" list="acctList"><datalist id="acctList"></datalist></div>
+                <p class="hint wide" id="txMsg" role="status"></p>
+                <!-- Add it comes first so that Enter presses it. The row is reversed on screen. -->
+                <div class="wide actions rev"><button type="submit" class="primary" id="addSave">Add it</button><button type="submit" id="addBoth">Add + quick pick</button><button type="submit" id="addPickOnly">Only quick pick</button><button type="button" id="addCancel" hidden>Cancel</button></div>
               </div>
-              <div class="pick"><label for="txAmount">Amount</label><input class="textin" id="txAmount" type="text" inputmode="decimal"></div>
-              <div class="pick"><label for="txCcy">Type of money</label><select id="txCcy"></select></div>
-              <div class="pick"><label for="txCat">What for</label><select id="txCat"></select><input class="textin" id="txCatNew" type="text" maxlength="30" placeholder="Name it" aria-label="Name for your new one" hidden></div>
-              <div class="pick"><label for="txDate">Date</label><input class="textin" id="txDate" type="date"></div>
-              <div class="pick"><label for="txNote">Note</label><input class="textin" id="txNote" type="text" maxlength="120"></div>
-              <div class="pick"><label for="txSource">Bank or wallet</label><input class="textin" id="txSource" type="text" maxlength="20" list="acctList"><datalist id="acctList"></datalist></div>
-              <p class="hint wide" id="txMsg" role="status"></p>
-              <!-- Add it comes first so that Enter presses it. The row is reversed on screen. -->
-              <div class="wide actions rev"><button type="submit" class="primary" id="addSave">Add it</button><button type="submit" id="addBoth">Add + quick pick</button><button type="submit" id="addPickOnly">Only quick pick</button><button type="button" id="addCancel" hidden>Cancel</button></div>
-            </div>
-          </form>
-        </section>
+            </form>
+          </section>
 
-        <div class="c5 stack">
+          <section class="panel stack" id="renamePanel">
+            <h2>What things are for</h2>
+            <p class="note">Add your own, or rename one and everything using it changes too. Use a name you already have to join two together.</p>
+            <div class="ren-cols">
+              <div><h3>Money out</h3><ul class="ren" id="renOut"></ul></div>
+              <div><h3>Money in</h3><ul class="ren" id="renIn"></ul></div>
+            </div>
+          </section>
+        </div>
+
+        <div class="c5 col">
           <section class="panel stack" id="quickPanel">
             <h2>Quick picks</h2>
             <div class="quicks" id="quickList"></div>
@@ -193,50 +204,30 @@
             <h2>Latest</h2>
             <ul class="latest" id="latestList"></ul>
           </section>
+
+          <section class="panel stack" id="checkPanel">
+            <h2>Does it match your bank?</h2>
+            <p class="note">Type what your bank really shows. If it doesn't match, you forgot to add something.</p>
+            <div class="addgrid">
+              <div class="pick"><label for="chkBank">Which bank</label><select id="chkBank"></select></div>
+              <div class="pick"><label for="chkReal" id="chkLabel">What your bank shows</label><input class="textin" id="chkReal" type="text" inputmode="decimal"></div>
+            </div>
+            <p class="hint" id="chkApp"></p>
+            <p id="chkResult" role="status" hidden></p>
+            <button type="button" class="start" id="chkFix" hidden>Add the missing amount</button>
+          </section>
         </div>
-
-        <section class="panel c5 stack" id="checkPanel">
-          <h2>Does it match your bank?</h2>
-          <p class="note">Type what your bank really shows. If it doesn't match, you forgot to add something.</p>
-          <div class="addgrid">
-            <div class="pick"><label for="chkBank">Which bank</label><select id="chkBank"></select></div>
-            <div class="pick"><label for="chkReal" id="chkLabel">What your bank shows</label><input class="textin" id="chkReal" type="text" inputmode="decimal"></div>
-          </div>
-          <p class="hint" id="chkApp"></p>
-          <p id="chkResult" role="status" hidden></p>
-          <button type="button" class="start" id="chkFix" hidden>Add the missing amount</button>
-        </section>
-
-        <section class="panel c7 stack" id="renamePanel">
-          <h2>What things are for</h2>
-          <p class="note">Add your own, or rename one and everything using it changes too. Use a name you already have to join two together.</p>
-          <div class="ren-cols">
-            <div><h3>Money out</h3><ul class="ren" id="renOut"></ul></div>
-            <div><h3>Money in</h3><ul class="ren" id="renIn"></ul></div>
-          </div>
-        </section>
       </div>
     </section>
 
     <section class="view" id="view-freedom" role="tabpanel" aria-labelledby="tab-freedom" hidden>
       <div class="grid">
-        <header class="hero c12">
-          <div id="hero">
-            <h1 id="headline"></h1>
-            <p class="lede" id="lede"></p>
-            <details class="how bare"><summary>See how we worked this out</summary><div id="numHow"></div></details>
-          </div>
-          <div>
-            <svg class="ridge" viewBox="0 0 800 130" aria-hidden="true">
-              <path class="r1" d="M0 130V78C60 60 110 74 170 56S290 34 350 50s110 10 170-8 130-22 280 6v82Z"/>
-              <path class="r2" d="M0 130V100c70-14 130 2 200-14s120-26 190-12 120 2 190-16 120-20 220-8v80Z"/>
-              <path class="r3" d="M0 130V118C80 112 130 120 200 104S320 92 390 84s100 6 170-14S680 26 742 22c20 2 40 12 58 24v84Z"/>
-              <path id="crest" fill="none" d="M0 118C80 112 130 120 200 104S320 92 390 84s100 6 170-14S680 26 742 22"/>
-              <rect class="home" x="733" y="4" width="18" height="18" rx="1"/>
-              <circle class="you" id="you" r="8" cx="0" cy="118"/>
-            </svg>
-            <p class="progress" id="progress"></p>
-          </div>
+        <header class="hero c12" id="hero">
+          <h1 id="headline"></h1>
+          <p class="lede" id="lede"></p>
+          <div class="bar" aria-hidden="true"><i id="bar"></i></div>
+          <p class="progress" id="progress"></p>
+          <details class="how bare"><summary>See how we worked this out</summary><div id="numHow"></div></details>
         </header>
 
         <div class="tile c4" id="tileDate"><h3>When you could get there</h3><div class="v" id="dateV"></div><p class="d" id="dateD"></p><details class="how"><summary>See how we worked this out</summary><div id="dateHow"></div></details></div>
