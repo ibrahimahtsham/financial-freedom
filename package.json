@@ -1,9 +1,0 @@
-{
-  "name": "financial-freedom",
-  "version": "1.0.0",
-  "private": true,
-  "description": "Browser-only money tracker and plan for when you could stop working.",
-  "scripts": {
-    "test": "node --test"
-  }
-}

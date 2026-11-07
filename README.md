@@ -60,7 +60,7 @@ The scripts are plain files loaded in order rather than ES modules, because brow
 ## Tests
 
 ```
-npm test
+node --test
 ```
 
 ## Privacy
