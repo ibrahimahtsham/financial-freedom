@@ -8,6 +8,7 @@
   --heat1: #f8d9d5; --heat2: #efa79f; --heat3: #e2685a; --heat4: #b3201a;
   --shade: rgba(0, 0, 0, 0.6);
   --gap-x: 40px; --gap-y: 48px;
+  color-scheme: light;
   --display: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
   --body: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
 }

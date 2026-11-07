@@ -8,6 +8,7 @@ const INFLATION_KEY = `${KEY}-inflation`;
 const TOUR_KEY = `${KEY}-tour`;
 const TAB_KEY = `${KEY}-tab`;
 const RANGE_KEY = `${KEY}-range`;
+const THEME_KEY = 'financial-freedom-theme';
 
 const POPULAR_CURRENCIES = ['USD', 'EUR', 'GBP', 'SAR', 'AED', 'PKR', 'INR', 'QAR', 'KWD', 'OMR', 'BHD', 'CAD', 'AUD'];
 const LAKH_CURRENCIES = ['PKR', 'INR', 'BDT', 'NPR', 'LKR'];

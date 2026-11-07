@@ -2,7 +2,7 @@
   "name": "financial-freedom",
   "version": "1.0.0",
   "private": true,
-  "description": "Browser-only calculator for how much you need invested, and when you get there.",
+  "description": "Browser-only money tracker and plan for when you could stop working.",
   "scripts": {
     "test": "node --test"
   }

@@ -158,6 +158,25 @@ function initWelcome() {
   });
 }
 
+const currentTheme = () => document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+function showThemeButton() {
+  const next = currentTheme() === 'dark' ? 'Light' : 'Dark';
+  $('themeBtn').textContent = next;
+  $('themeBtn').setAttribute('aria-label', `Switch to ${next.toLowerCase()} colours`);
+}
+
+function initTheme() {
+  showThemeButton();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', showThemeButton);
+  $('themeBtn').addEventListener('click', () => {
+    const next = currentTheme() === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    writeStored(THEME_KEY, next);
+    showThemeButton();
+  });
+}
+
 function initTopBar() {
   $('tabs').addEventListener('click', e => {
     const tab = e.target.closest('[role=tab]');
@@ -225,6 +244,7 @@ function boot() {
   initTutorial();
   initWelcome();
   initTopBar();
+  initTheme();
   currencyOptions();
   const start = knownCurrency(state.ccy) ? state.ccy : 'USD';
   $('wCcy').value = start;

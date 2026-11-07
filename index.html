@@ -8,6 +8,10 @@
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap">
+<script>
+  // Runs before the page shows, so it never flashes the wrong colours. Same key as THEME_KEY.
+  try { var theme = JSON.parse(localStorage.getItem('financial-freedom-theme')); if (theme) document.documentElement.dataset.theme = theme; } catch (e) { /* follow the computer */ }
+</script>
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/layout.css">
 <link rel="stylesheet" href="css/components.css">
@@ -45,6 +49,7 @@
           <label title="Prices go up over time. This shows what old spending would cost now"><input type="radio" name="priceView" value="today"><span>Today's prices</span></label>
         </div>
         <select id="ccy" aria-label="Show everything in this type of money"></select>
+        <button type="button" id="themeBtn"></button>
         <details class="menu" id="menu">
           <summary aria-label="Menu">Menu</summary>
           <div class="menu-box stack" id="menuBox">

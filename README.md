@@ -4,7 +4,7 @@ See where your money goes, and how much you need so you never have to work for m
 
 ## Use it
 
-Double-click `index.html`. Your numbers stay in that browser, so use **Menu > Save my plan** to keep a copy.
+Open it at https://ibrahimahtsham.github.io/financial-freedom/, or double-click `index.html`. Your numbers stay in that browser, so use **Menu > Save my plan** to keep a copy.
 
 ## How it works
 
