@@ -63,7 +63,7 @@ function buildFreedom() {
 
 // The years you typed: how much to save, and how much you need to get paid for that.
 function renderOwnYears(f) {
-  const { cur, live, months, rate, spendNow } = f;
+  const { cur, live, months, rate } = f;
   const y = state.freeIn;
   const fits = y !== null && y * 12 < months;
   $('takeUse').hidden = !fits || live <= 0;
@@ -72,11 +72,11 @@ function renderOwnYears(f) {
   const need = Engine.savingToStop({ cur, spend: live, months, stop: y * 12, rate });
   const year = new Date().getFullYear() + y;
   $('takeUse').dataset.save = need;
-  $('takeAnswer').innerHTML = `To be free by ${year}${state.born ? `, when you are ${year - state.born}` : ''}, you need to get paid <b>${money(need + spendNow)} a month</b>. That is ${money(need)} to save and ${money(spendNow)} to spend.`;
+  $('takeAnswer').innerHTML = `To be free by ${year}${state.born ? `, when you are ${year - state.born}` : ''}, you need to get paid <b>${money(need + live)} a month</b>. That is ${money(need)} to save and ${money(live)} to spend.`;
 }
 
 function renderTake(f) {
-  const { cur, live, months, rate, spendNow } = f;
+  const { cur, live, months, rate } = f;
   $('takeNote').textContent = f.save > 0
     ? 'Pick when you want to get there. You need to get paid enough to cover your saving and your spending.'
     : "You aren't saving right now, so here is what each choice would need. You need to get paid enough to cover your saving and your spending.";
@@ -84,7 +84,7 @@ function renderTake(f) {
     const need = Engine.savingToStop({ cur, spend: live, months, stop: y * 12, rate });
     const year = new Date().getFullYear() + y;
     const mine = Math.abs(need - f.save) < 0.5;
-    return `<tr class="${mine ? 'me' : ''}"><td>${y} years, by ${year}${state.born ? ` (age ${year - state.born})` : ''}</td><td class="num-col">${money(need)}</td><td class="num-col">${money(spendNow)}</td><td class="num-col amt">${money(need + spendNow)}</td><td class="acts">${mine ? 'Your plan' : `<button type="button" data-save="${need}">Use this</button>`}</td></tr>`;
+    return `<tr class="${mine ? 'me' : ''}"><td>${y} years, by ${year}${state.born ? ` (age ${year - state.born})` : ''}</td><td class="num-col">${money(need)}</td><td class="num-col">${money(live)}</td><td class="num-col amt">${money(need + live)}</td><td class="acts">${mine ? 'Your plan' : `<button type="button" data-save="${need}">Use this</button>`}</td></tr>`;
   }).join('');
   $('takeTable').innerHTML = `<thead><tr><th>To get there in</th><th class="num-col">Save a month</th><th class="num-col">Spend a month</th><th class="num-col">Get paid a month</th><th></th></tr></thead><tbody>${rows}</tbody>`;
 }
@@ -181,6 +181,12 @@ function renderFreedom() {
   set('fCur', fmt(cur * u));
   set('fSave', fmt(save * u));
   set('fLive', fmt(live * u));
+  set('fPay', fmt((save + live) * u));
+  set('fYears', hit === null ? '' : +(hit / 12).toFixed(1));
+  const typedPay = focused === $('fPay') ? parseNumber($('fPay').value) / u : NaN;
+  const typedYears = focused === $('fYears') ? parseNumber($('fYears').value) : NaN;
+  $('payHint').textContent = typedPay < live ? 'That is less than you want to spend, so nothing is left to save.' : 'What you spend plus what you save.';
+  $('yearsHint').textContent = typedYears * 12 >= f.months ? (state.born ? `That is past age ${LAST_AGE}. Try fewer years.` : 'That is too far away. Try fewer years.') : hit === null ? 'Type a number and we work out what to save.' : '';
   set('fBorn', state.born ?? '');
   set('takeYears', state.freeIn ?? '');
   set('fGrow', state.grow);
@@ -236,6 +242,11 @@ function initFreedom() {
   edit('fCur', n => { state.cur = n / unit(); });
   edit('fSave', n => { state.save = n / unit(); });
   edit('fLive', n => { state.live = n / unit(); });
+  edit('fPay', n => { state.save = Math.max(0, n / unit() - freedomView.live); });
+  edit('fYears', y => {
+    const { cur, live, months, rate } = freedomView;
+    if (y > 0 && y * 12 < months) state.save = Engine.savingToStop({ cur, spend: live, months, stop: Math.max(1, Math.round(y * 12)), rate });
+  });
   $('liveAuto').addEventListener('click', () => { state.live = null; saveState(); renderFreedom(); });
   $('curAuto').addEventListener('click', () => { state.cur = null; saveState(); renderFreedom(); });
   $('takeTable').addEventListener('click', e => {

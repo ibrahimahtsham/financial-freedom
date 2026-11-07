@@ -245,10 +245,13 @@
 
         <div class="panel c4 stack" id="inputs">
           <h2>Your numbers</h2>
+          <p class="note">Change one and the others follow.</p>
           <div class="pick"><label for="fBorn">Year you were born</label><span class="num"><input type="text" id="fBorn" inputmode="numeric" maxlength="4"></span><p class="hint">You can skip this. It lets us plan up to age 100.</p></div>
           <div class="pick"><label for="fCur">Savings so far</label><span class="num"><span class="unit uMine"></span><input type="text" id="fCur" inputmode="decimal"></span><p class="hint" id="curHint"></p><button type="button" class="link start" id="curAuto" hidden></button></div>
-          <div class="pick"><label for="fSave">Saving each month</label><span class="num"><span class="unit uMine"></span><input type="text" id="fSave" inputmode="decimal"></span><p class="hint" id="saveHint"></p></div>
           <div class="pick"><label for="fLive">What you want to spend each month</label><span class="num"><span class="unit uMine"></span><input type="text" id="fLive" inputmode="decimal"></span><p class="hint" id="liveHint"></p><button type="button" class="link start" id="liveAuto" hidden></button></div>
+          <div class="pick"><label for="fPay">Get paid each month</label><span class="num"><span class="unit uMine"></span><input type="text" id="fPay" inputmode="decimal"></span><p class="hint" id="payHint"></p></div>
+          <div class="pick"><label for="fSave">Saving each month</label><span class="num"><span class="unit uMine"></span><input type="text" id="fSave" inputmode="decimal"></span><p class="hint" id="saveHint"></p></div>
+          <div class="pick"><label for="fYears">Years until you are free</label><span class="num"><input type="text" id="fYears" inputmode="decimal" maxlength="5"><span class="unit">years</span></span><p class="hint" id="yearsHint"></p></div>
           <div class="pick">
             <span class="pick-name" id="growName">What your savings do</span>
             <div class="seg" role="radiogroup" aria-labelledby="growName">
